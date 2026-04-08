@@ -15,7 +15,6 @@ use OAuth\Common\Consumer\CredentialsInterface;
 use OAuth\Common\Http\Client\ClientInterface;
 use OAuth\Common\Http\Exception\TokenResponseException;
 use OAuth\Common\Http\Uri\Uri;
-use OAuth\Common\Http\Uri\UriInterface;
 use OAuth\Common\Storage\TokenStorageInterface;
 use OAuth\OAuth2\Service\AbstractService;
 use OAuth\OAuth2\Token\StdOAuth2Token;
@@ -32,7 +31,7 @@ class patreon extends AbstractService
 		ClientInterface $httpClient,
 		TokenStorageInterface $storage,
 		$scopes = [],
-		?UriInterface $baseApiUri = null
+		?\OAuth\Common\Http\Uri\UriInterface $baseApiUri = null
 	)
 	{
 		parent::__construct($credentials, $httpClient, $storage, $scopes, $baseApiUri, true);
