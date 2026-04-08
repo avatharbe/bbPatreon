@@ -50,6 +50,7 @@ services:
             - '@dbal.conn'
             - '@log'
             - '@avathar.bbpatreon.service.group_mapper'
+            - '@dispatcher'
             - '%avathar.bbpatreon.tables.patreon_sync%'
             - '%tables.auth_provider_oauth_account_assoc%'
 

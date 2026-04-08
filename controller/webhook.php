@@ -27,6 +27,9 @@ class webhook
 	/** @var \avathar\bbpatreon\service\group_mapper */
 	protected $group_mapper;
 
+	/** @var \phpbb\event\dispatcher_interface */
+	protected $dispatcher;
+
 	/** @var string */
 	protected $patreon_sync_table;
 
@@ -41,6 +44,7 @@ class webhook
 		\phpbb\db\driver\driver_interface $db,
 		\phpbb\log\log_interface $log,
 		\avathar\bbpatreon\service\group_mapper $group_mapper,
+		\phpbb\event\dispatcher_interface $dispatcher,
 		string $patreon_sync_table,
 		string $oauth_accounts_table
 	)
@@ -49,6 +53,7 @@ class webhook
 		$this->db					= $db;
 		$this->log					= $log;
 		$this->group_mapper			= $group_mapper;
+		$this->dispatcher			= $dispatcher;
 		$this->patreon_sync_table	= $patreon_sync_table;
 		$this->oauth_accounts_table	= $oauth_accounts_table;
 	}
@@ -163,6 +168,33 @@ class webhook
 				break;
 			}
 		}
+
+		/**
+		 * Event fired after a Patreon webhook pledge event has been processed.
+		 *
+		 * Allows other extensions to react to pledge changes (e.g. award badges,
+		 * send PMs, update stats, trigger Discord notifications).
+		 *
+		 * @event avathar.bbpatreon.pledge_changed
+		 * @var string	event_type			Webhook trigger: members:pledge:create, update, or delete
+		 * @var int|null	user_id			phpBB user ID (null if Patreon account is not linked to a forum user)
+		 * @var string	patreon_user_id		Patreon user ID
+		 * @var string	patron_status		active_patron, declined_patron, former_patron, or pending_link
+		 * @var string	tier_id				Patreon tier ID (empty string if no active tier)
+		 * @var string	tier_label			Human-readable tier name (empty string if no active tier)
+		 * @var int		pledge_cents		Pledge amount in cents (0 if cancelled)
+		 * @since 1.0.0
+		 */
+		$vars = array(
+			'event_type',
+			'user_id',
+			'patreon_user_id',
+			'patron_status',
+			'tier_id',
+			'tier_label',
+			'pledge_cents',
+		);
+		extract($this->dispatcher->trigger_event('avathar.bbpatreon.pledge_changed', compact($vars)));
 
 		return new JsonResponse(['status' => 'ok']);
 	}
