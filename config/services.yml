@@ -76,6 +76,7 @@ services:
             - '@config'
             - '@dbal.conn'
             - '@language'
+            - '@log'
             - '@request'
             - '@template'
             - '@user'

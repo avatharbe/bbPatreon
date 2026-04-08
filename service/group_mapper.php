@@ -116,6 +116,10 @@ class group_mapper
 			if (!$this->user_in_group($user_id, $target_group_id))
 			{
 				group_user_add($target_group_id, [$user_id]);
+				$this->log->add('admin', ANONYMOUS, '', 'LOG_PATREON_GROUP_ADD', false, [
+					(string) $user_id,
+					(string) $target_group_id,
+				]);
 			}
 		}
 		else
@@ -139,6 +143,10 @@ class group_mapper
 			if ($this->user_in_group($user_id, (int) $group_id))
 			{
 				group_user_del((int) $group_id, [$user_id]);
+				$this->log->add('admin', ANONYMOUS, '', 'LOG_PATREON_GROUP_REMOVE', false, [
+					(string) $user_id,
+					(string) $group_id,
+				]);
 			}
 		}
 	}

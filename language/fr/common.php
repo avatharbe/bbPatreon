@@ -33,4 +33,9 @@ $lang = array_merge($lang, [
 	'LOG_PATREON_WEBHOOK_BAD_SIGNATURE'	=> '<strong>Échec de la validation de la signature du webhook Patreon</strong>',
 	'LOG_PATREON_CRON_SYNC'				=> '<strong>Synchronisation cron Patreon terminée :</strong> %1$s membres récupérés, %2$s synchronisés',
 	'LOG_PATREON_MANUAL_SYNC'			=> '<strong>Synchronisation manuelle Patreon :</strong> %1$s membres récupérés, %2$s synchronisés',
+	'LOG_PATREON_LINKED'				=> '<strong>Compte Patreon lié :</strong> utilisateur %1$s a lié le Patreon ID %2$s (palier : %3$s, statut : %4$s)',
+	'LOG_PATREON_UNLINKED'				=> '<strong>Compte Patreon délié :</strong> utilisateur %1$s a délié le Patreon ID %2$s',
+	'LOG_PATREON_WEBHOOK_EVENT'			=> '<strong>Webhook Patreon reçu :</strong> %1$s (statut : %2$s, palier : %3$s)',
+	'LOG_PATREON_GROUP_ADD'				=> '<strong>Promotion de groupe Patreon :</strong> utilisateur ID %1$s ajouté au groupe ID %2$s',
+	'LOG_PATREON_GROUP_REMOVE'			=> '<strong>Rétrogradation de groupe Patreon :</strong> utilisateur ID %1$s retiré du groupe ID %2$s',
 ]);

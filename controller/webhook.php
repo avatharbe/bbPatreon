@@ -134,6 +134,13 @@ class webhook
 		// Upsert sync table
 		$this->upsert_sync($patreon_user_id, $tier_id, $tier_label, $patron_status, $pledge_cents);
 
+		// Log the webhook event
+		$this->log->add('admin', ANONYMOUS, '', 'LOG_PATREON_WEBHOOK_EVENT', false, [
+			$event_type,
+			$patron_status,
+			$tier_label ?: '-',
+		]);
+
 		// Find linked phpBB user
 		$user_id = $this->get_linked_user($patreon_user_id);
 

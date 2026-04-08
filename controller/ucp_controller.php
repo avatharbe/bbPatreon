@@ -52,6 +52,9 @@ class ucp_controller
 	/** @var string */
 	protected $oauth_state_table;
 
+	/** @var \phpbb\log\log_interface */
+	protected $log;
+
 	/** @var \phpbb\notification\manager */
 	protected $notification_manager;
 
@@ -62,6 +65,7 @@ class ucp_controller
 		\phpbb\config\config $config,
 		\phpbb\db\driver\driver_interface $db,
 		\phpbb\language\language $language,
+		\phpbb\log\log_interface $log,
 		\phpbb\request\request $request,
 		\phpbb\template\template $template,
 		\phpbb\user $user,
@@ -82,6 +86,7 @@ class ucp_controller
 		$this->user					= $user;
 		$this->group_mapper			= $group_mapper;
 		$this->api_client			= $api_client;
+		$this->log					= $log;
 		$this->notification_manager	= $notification_manager;
 		$this->patreon_sync_table	= $patreon_sync_table;
 		$this->oauth_accounts_table	= $oauth_accounts_table;
@@ -153,6 +158,11 @@ class ucp_controller
 				$this->db->sql_query($sql);
 
 				$this->group_mapper->demote_from_all_patron_groups($user_id);
+
+				$this->log->add('user', $user_id, $this->user->ip, 'LOG_PATREON_UNLINKED', false, [
+					$this->user->data['username'],
+					$patreon_user_id,
+				]);
 
 				$is_linked = false;
 				$patreon_user_id = '';
@@ -293,6 +303,14 @@ class ucp_controller
 
 		// Sync groups
 		$this->group_mapper->sync_user_groups($user_id, $tier_id, $patron_status);
+
+		// Log the link event
+		$this->log->add('user', $user_id, $this->user->ip, 'LOG_PATREON_LINKED', false, [
+			$this->user->data['username'],
+			$patreon_user_id,
+			$tier_label ?: '-',
+			$patron_status,
+		]);
 
 		// Notify admins/moderators
 		$this->notification_manager->add_notifications('avathar.bbpatreon.notification.type.patreon_linked', [

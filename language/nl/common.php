@@ -37,4 +37,9 @@ $lang = array_merge($lang, [
 	'LOG_PATREON_WEBHOOK_BAD_SIGNATURE'	=> '<strong>Patreon webhook handtekeningvalidatie mislukt</strong>',
 	'LOG_PATREON_CRON_SYNC'				=> '<strong>Patreon cron-synchronisatie voltooid:</strong> %1$s leden opgehaald, %2$s gesynchroniseerd',
 	'LOG_PATREON_MANUAL_SYNC'			=> '<strong>Patreon handmatige synchronisatie:</strong> %1$s leden opgehaald, %2$s gesynchroniseerd',
+	'LOG_PATREON_LINKED'				=> '<strong>Patreon-account gekoppeld:</strong> gebruiker %1$s koppelde Patreon-ID %2$s (tier: %3$s, status: %4$s)',
+	'LOG_PATREON_UNLINKED'				=> '<strong>Patreon-account ontkoppeld:</strong> gebruiker %1$s ontkoppelde Patreon-ID %2$s',
+	'LOG_PATREON_WEBHOOK_EVENT'			=> '<strong>Patreon webhook ontvangen:</strong> %1$s (status: %2$s, tier: %3$s)',
+	'LOG_PATREON_GROUP_ADD'				=> '<strong>Patreon groepspromotie:</strong> gebruiker-ID %1$s toegevoegd aan groep-ID %2$s',
+	'LOG_PATREON_GROUP_REMOVE'			=> '<strong>Patreon groepsdegradatie:</strong> gebruiker-ID %1$s verwijderd uit groep-ID %2$s',
 ]);
