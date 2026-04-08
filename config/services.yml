@@ -1,0 +1,119 @@
+imports:
+    - { resource: parameters.yml }
+
+services:
+
+    # phpBB OAuth service for Patreon (ID must match phpBB convention)
+    auth.provider.oauth.service.patreon:
+        class: avathar\bbpatreon\auth\provider\oauth\service\patreon
+        arguments:
+            - '@config'
+            - '@request'
+        tags:
+            - { name: auth.provider.oauth.service }
+
+    # Patreon API v2 client
+    avathar.bbpatreon.service.api_client:
+        class: avathar\bbpatreon\service\api_client
+        arguments:
+            - '@config'
+            - '@log'
+
+    # Tier-to-group mapper
+    avathar.bbpatreon.service.group_mapper:
+        class: avathar\bbpatreon\service\group_mapper
+        arguments:
+            - '@config'
+            - '@dbal.conn'
+            - '@log'
+            - '%core.root_path%'
+            - '%core.php_ext%'
+
+    # Event listener
+    avathar.bbpatreon.listener:
+        class: avathar\bbpatreon\event\listener
+        arguments:
+            - '@config'
+            - '@dbal.conn'
+            - '@language'
+            - '@avathar.bbpatreon.service.api_client'
+            - '@avathar.bbpatreon.service.group_mapper'
+            - '%avathar.bbpatreon.tables.patreon_sync%'
+        tags:
+            - { name: event.listener }
+
+    # Webhook controller
+    avathar.bbpatreon.controller.webhook:
+        class: avathar\bbpatreon\controller\webhook
+        arguments:
+            - '@config'
+            - '@dbal.conn'
+            - '@log'
+            - '@avathar.bbpatreon.service.group_mapper'
+            - '%avathar.bbpatreon.tables.patreon_sync%'
+            - '%tables.auth_provider_oauth_account_assoc%'
+
+    # ACP controller
+    avathar.bbpatreon.controller.acp:
+        class: avathar\bbpatreon\controller\acp_controller
+        arguments:
+            - '@config'
+            - '@dbal.conn'
+            - '@language'
+            - '@log'
+            - '@request'
+            - '@template'
+            - '@user'
+            - '@avathar.bbpatreon.service.api_client'
+            - '@avathar.bbpatreon.service.group_mapper'
+            - '%avathar.bbpatreon.tables.patreon_sync%'
+            - '%tables.auth_provider_oauth_account_assoc%'
+
+    # UCP controller
+    avathar.bbpatreon.controller.ucp:
+        class: avathar\bbpatreon\controller\ucp_controller
+        arguments:
+            - '@config'
+            - '@dbal.conn'
+            - '@language'
+            - '@request'
+            - '@template'
+            - '@user'
+            - '@avathar.bbpatreon.service.group_mapper'
+            - '@avathar.bbpatreon.service.api_client'
+            - '@notification_manager'
+            - '%avathar.bbpatreon.tables.patreon_sync%'
+            - '%tables.auth_provider_oauth_account_assoc%'
+            - '%tables.auth_provider_oauth_token_storage%'
+            - '%tables.auth_provider_oauth_states%'
+
+    # OAuth callback controller
+    avathar.bbpatreon.controller.callback:
+        class: avathar\bbpatreon\controller\callback
+        arguments:
+            - '@request'
+            - '@user'
+
+    # Notification type: Patreon account linked
+    avathar.bbpatreon.notification.type.patreon_linked:
+        class: avathar\bbpatreon\notification\type\patreon_linked
+        shared: false
+        parent: notification.type.base
+        tags:
+            - { name: notification.type }
+
+    # Nightly cron task
+    avathar.bbpatreon.cron.task.sync:
+        class: avathar\bbpatreon\cron\task\sync
+        arguments:
+            - '@config'
+            - '@dbal.conn'
+            - '@log'
+            - '@avathar.bbpatreon.service.api_client'
+            - '@avathar.bbpatreon.service.group_mapper'
+            - '%avathar.bbpatreon.tables.patreon_sync%'
+            - '%tables.auth_provider_oauth_account_assoc%'
+        calls:
+            - [set_name, ['avathar.bbpatreon.cron.task.sync']]
+        tags:
+            - { name: cron.task }

@@ -1,0 +1,2 @@
+parameters:
+    avathar.bbpatreon.tables.patreon_sync: '%core.table_prefix%patreon_sync'

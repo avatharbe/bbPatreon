@@ -1,0 +1,9 @@
+avathar_bbpatreon_webhook:
+    path: /patreon/webhook
+    defaults: { _controller: avathar.bbpatreon.controller.webhook:handle }
+    methods: [POST]
+
+avathar_bbpatreon_callback:
+    path: /patreon/callback
+    defaults: { _controller: avathar.bbpatreon.controller.callback:handle }
+    methods: [GET]

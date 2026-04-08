@@ -1,0 +1,238 @@
+{% include 'overall_header.html' %}
+
+<h1>{{ lang('ACP_BBPATREON_TITLE') }}</h1>
+
+<details class="bbpatreon-help">
+	<summary>{{ lang('ACP_BBPATREON_OVERVIEW_TITLE') }}</summary>
+	<div class="panel">
+		<div class="inner">
+			<p>{{ lang('ACP_BBPATREON_OVERVIEW') }}</p>
+
+			<h4>{{ lang('ACP_BBPATREON_HOW_IT_WORKS_TITLE') }}</h4>
+			<ol>
+				<li>{{ lang('ACP_BBPATREON_STEP_CREDENTIALS') }}</li>
+				<li>{{ lang('ACP_BBPATREON_STEP_TIERS') }}</li>
+				<li>{{ lang('ACP_BBPATREON_STEP_WEBHOOK') }}</li>
+				<li>{{ lang('ACP_BBPATREON_STEP_USERS') }}</li>
+			</ol>
+
+			<h4>{{ lang('ACP_BBPATREON_SYNC_TITLE') }}</h4>
+			<p>{{ lang('ACP_BBPATREON_SYNC_EXPLAIN') }}</p>
+
+			<h4>{{ lang('ACP_BBPATREON_STATUSES_TITLE') }}</h4>
+			<ul>
+				<li><strong>active_patron</strong> &ndash; {{ lang('ACP_BBPATREON_STATUS_ACTIVE') }}</li>
+				<li><strong>declined_patron</strong> &ndash; {{ lang('ACP_BBPATREON_STATUS_DECLINED') }}</li>
+				<li><strong>former_patron</strong> &ndash; {{ lang('ACP_BBPATREON_STATUS_FORMER') }}</li>
+				<li><strong>pending_link</strong> &ndash; {{ lang('ACP_BBPATREON_STATUS_PENDING') }}</li>
+			</ul>
+		</div>
+	</div>
+</details>
+
+{% if S_ERROR %}
+	<div class="errorbox">
+		<h3>{{ lang('WARNING') }}</h3>
+		<p>{{ ERROR_MSG }}</p>
+	</div>
+{% endif %}
+
+<form id="avathar_bbpatreon_acp" method="post" action="{{ U_ACTION }}">
+
+	<fieldset>
+		<legend>{{ lang('ACP_BBPATREON_API_CREDENTIALS') }}</legend>
+		<details class="bbpatreon-help">
+			<summary>{{ lang('ACP_BBPATREON_HELP') }}</summary>
+			<p>{{ lang('ACP_BBPATREON_API_CREDENTIALS_EXPLAIN') }}</p>
+		</details>
+		<dl>
+			<dt><label for="patreon_client_id">{{ lang('ACP_BBPATREON_CLIENT_ID') ~ lang('COLON') }}</label><br>
+				<span>{{ lang('ACP_BBPATREON_CLIENT_ID_EXPLAIN') }}</span></dt>
+			<dd><input type="text" id="patreon_client_id" name="patreon_client_id" value="{{ PATREON_CLIENT_ID }}" size="50"></dd>
+		</dl>
+		<dl>
+			<dt><label for="patreon_client_secret">{{ lang('ACP_BBPATREON_CLIENT_SECRET') ~ lang('COLON') }}</label></dt>
+			<dd><input type="password" id="patreon_client_secret" name="patreon_client_secret" value="{{ PATREON_CLIENT_SECRET }}" size="50"></dd>
+		</dl>
+		<dl>
+			<dt><label for="patreon_creator_access_token">{{ lang('ACP_BBPATREON_CREATOR_TOKEN') ~ lang('COLON') }}</label><br>
+				<span>{{ lang('ACP_BBPATREON_CREATOR_TOKEN_EXPLAIN') }}</span></dt>
+			<dd><input type="password" id="patreon_creator_access_token" name="patreon_creator_access_token" value="{{ PATREON_CREATOR_ACCESS_TOKEN }}" size="50"></dd>
+		</dl>
+		<dl>
+			<dt><label for="patreon_creator_refresh_token">{{ lang('ACP_BBPATREON_CREATOR_REFRESH') ~ lang('COLON') }}</label></dt>
+			<dd><input type="password" id="patreon_creator_refresh_token" name="patreon_creator_refresh_token" value="{{ PATREON_CREATOR_REFRESH_TOKEN }}" size="50"></dd>
+		</dl>
+		<dl>
+			<dt><label for="patreon_campaign_id">{{ lang('ACP_BBPATREON_CAMPAIGN_ID') ~ lang('COLON') }}</label><br>
+				<span>{{ lang('ACP_BBPATREON_CAMPAIGN_ID_EXPLAIN') }}</span></dt>
+			<dd>
+				<input type="text" id="patreon_campaign_id" name="patreon_campaign_id" value="{{ PATREON_CAMPAIGN_ID }}" size="30">
+				<input class="button2" type="submit" name="fetch_campaign" value="{{ lang('ACP_BBPATREON_FETCH_CAMPAIGN') }}">
+			</dd>
+		</dl>
+	</fieldset>
+
+	<fieldset>
+		<legend>{{ lang('ACP_BBPATREON_WEBHOOK') }}</legend>
+		<details class="bbpatreon-help">
+			<summary>{{ lang('ACP_BBPATREON_HELP') }}</summary>
+			<p>{{ lang('ACP_BBPATREON_WEBHOOK_EXPLAIN') }}</p>
+		</details>
+		<dl>
+			<dt>{{ lang('ACP_BBPATREON_WEBHOOK_URL') ~ lang('COLON') }}<br>
+				<span>{{ lang('ACP_BBPATREON_WEBHOOK_URL_EXPLAIN') }}</span></dt>
+			<dd><input type="text" readonly="readonly" value="{{ PATREON_WEBHOOK_URL }}" size="60" onclick="this.select();" style="cursor: pointer;"></dd>
+		</dl>
+		<dl>
+			<dt><label for="patreon_webhook_secret">{{ lang('ACP_BBPATREON_WEBHOOK_SECRET') ~ lang('COLON') }}</label><br>
+				<span>{{ lang('ACP_BBPATREON_WEBHOOK_SECRET_EXPLAIN') }}</span></dt>
+			<dd><input type="text" id="patreon_webhook_secret" name="patreon_webhook_secret" value="{{ PATREON_WEBHOOK_SECRET }}" size="50"></dd>
+		</dl>
+		<dl>
+			<dt>{{ lang('ACP_BBPATREON_REGISTER_WEBHOOK') ~ lang('COLON') }}<br>
+				<span>{{ lang('ACP_BBPATREON_REGISTER_WEBHOOK_EXPLAIN') }}</span></dt>
+			<dd><input class="button2" type="submit" name="register_webhook" value="{{ lang('ACP_BBPATREON_REGISTER_WEBHOOK') }}"></dd>
+		</dl>
+		<dl>
+			<dt>{{ lang('ACP_BBPATREON_CHECK_WEBHOOK') ~ lang('COLON') }}<br>
+				<span>{{ lang('ACP_BBPATREON_CHECK_WEBHOOK_EXPLAIN') }}</span></dt>
+			<dd>
+				<input class="button2" type="submit" name="check_webhook" value="{{ lang('ACP_BBPATREON_CHECK_WEBHOOK') }}">
+				<input class="button2" type="submit" name="test_webhook" value="{{ lang('ACP_BBPATREON_TEST_WEBHOOK') }}">
+			</dd>
+		</dl>
+	</fieldset>
+
+	<fieldset>
+		<legend>{{ lang('ACP_BBPATREON_TIER_MAPPING') }}</legend>
+		<details class="bbpatreon-help">
+			<summary>{{ lang('ACP_BBPATREON_HELP') }}</summary>
+			<p>{{ lang('ACP_BBPATREON_TIER_MAPPING_EXPLAIN') }}</p>
+		</details>
+
+		<p><input class="button2" type="submit" name="fetch_tiers" value="{{ lang('ACP_BBPATREON_FETCH_TIERS') }}">
+			<span class="small">{{ lang('ACP_BBPATREON_FETCH_TIERS_EXPLAIN') }}</span></p>
+
+		<table class="table1" id="tier-map-table">
+			<thead>
+				<tr>
+					<th>{{ lang('ACP_BBPATREON_TIER') }}</th>
+					<th>{{ lang('ACP_BBPATREON_PHPBB_GROUP') }}</th>
+					<th>&nbsp;</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for row in tier_map %}
+				<tr class="tier-map-row">
+					<td>
+						{% if row.TIER_LABEL %}
+							<strong>{{ row.TIER_LABEL }}</strong><br>
+							<span class="small">ID: {{ row.TIER_ID }}</span>
+						{% else %}
+							{{ row.TIER_ID }}
+						{% endif %}
+						<input type="hidden" name="tier_ids[]" value="{{ row.TIER_ID }}">
+					</td>
+					<td>
+						<select name="group_ids[]">
+							<option value="0">{{ lang('ACP_BBPATREON_SELECT_GROUP') }}</option>
+							{% for group in groups %}
+							<option value="{{ group.GROUP_ID }}"{% if group.GROUP_ID == row.GROUP_ID %} selected="selected"{% endif %}>{{ group.GROUP_NAME }}</option>
+							{% endfor %}
+						</select>
+					</td>
+					<td><a href="#" class="tier-map-remove" onclick="this.closest('tr').remove(); return false;">{{ lang('REMOVE') }}</a></td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+
+		<dl>
+			<dt><label for="patreon_grace_period_days">{{ lang('ACP_BBPATREON_GRACE_PERIOD') ~ lang('COLON') }}</label><br>
+				<span>{{ lang('ACP_BBPATREON_GRACE_PERIOD_EXPLAIN') }}</span></dt>
+			<dd><input type="number" id="patreon_grace_period_days" name="patreon_grace_period_days" value="{{ PATREON_GRACE_PERIOD_DAYS }}" min="0" size="5"> {{ lang('DAYS') }}</dd>
+		</dl>
+	</fieldset>
+
+	<fieldset>
+		<legend>{{ lang('ACP_BBPATREON_LINKED_USERS') }}</legend>
+		<details class="bbpatreon-help">
+			<summary>{{ lang('ACP_BBPATREON_HELP') }}</summary>
+			<p>{{ lang('ACP_BBPATREON_LINKED_USERS_EXPLAIN') }}</p>
+		</details>
+		<p>{{ lang('ACP_BBPATREON_LAST_SYNC') ~ lang('COLON') }} {{ PATREON_LAST_SYNC }}</p>
+		{% if linked_users %}
+		<table class="table1">
+			<thead>
+				<tr>
+					<th>{{ lang('USERNAME') }}</th>
+					<th>{{ lang('ACP_BBPATREON_PATREON_ID') }}</th>
+					<th>{{ lang('ACP_BBPATREON_TIER') }}</th>
+					<th>{{ lang('ACP_BBPATREON_STATUS') }}</th>
+					<th>{{ lang('ACP_BBPATREON_PLEDGE') }}</th>
+					<th>{{ lang('ACP_BBPATREON_LAST_WEBHOOK') }}</th>
+					<th>{{ lang('ACP_BBPATREON_LAST_SYNCED') }}</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for user in linked_users %}
+				<tr class="{{ loop.index is odd ? 'row1' : 'row2' }}">
+					<td>{{ user.USERNAME }}</td>
+					<td>{{ user.PATREON_USER_ID }}</td>
+					<td>{{ user.TIER_LABEL }}</td>
+					<td>{{ user.PLEDGE_STATUS }}</td>
+					<td>${{ user.PLEDGE_AMOUNT }}</td>
+					<td>{{ user.LAST_WEBHOOK }}</td>
+					<td>{{ user.LAST_SYNCED }}</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+		{% else %}
+		<p><em>{{ lang('ACP_BBPATREON_NO_LINKED_USERS') }}</em></p>
+		{% endif %}
+	</fieldset>
+
+	<fieldset class="submit-buttons">
+		<input class="button1" type="submit" name="submit" value="{{ lang('SUBMIT') }}">
+		<input class="button2" type="submit" name="sync" value="{{ lang('ACP_BBPATREON_MANUAL_SYNC') }}">
+		{{ S_FORM_TOKEN }}
+	</fieldset>
+
+</form>
+
+<style>
+.bbpatreon-help {
+	margin: 4px 0 8px;
+}
+.bbpatreon-help > summary {
+	cursor: pointer;
+	color: #115098;
+	font-size: .9em;
+	list-style: none;
+}
+.bbpatreon-help > summary::-webkit-details-marker {
+	display: none;
+}
+.bbpatreon-help > summary::before {
+	content: "\25B6\00a0";
+	font-size: .7em;
+	vertical-align: middle;
+}
+.bbpatreon-help[open] > summary::before {
+	content: "\25BC\00a0";
+}
+.bbpatreon-help > .panel,
+.bbpatreon-help > p {
+	margin: 6px 0 0 14px;
+	font-size: .9em;
+	color: #555;
+}
+.bbpatreon-help > .panel .inner {
+	padding: 8px 12px;
+}
+</style>
+
+
+{% include 'overall_footer.html' %}

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<dataset>
+	<table name="phpbb_config">
+		<column>config_name</column>
+		<column>config_value</column>
+		<column>is_dynamic</column>
+		<row>
+			<value>patreon_client_id</value>
+			<value></value>
+			<value>0</value>
+		</row>
+		<row>
+			<value>patreon_client_secret</value>
+			<value></value>
+			<value>0</value>
+		</row>
+		<row>
+			<value>patreon_creator_access_token</value>
+			<value></value>
+			<value>0</value>
+		</row>
+		<row>
+			<value>patreon_creator_refresh_token</value>
+			<value></value>
+			<value>0</value>
+		</row>
+		<row>
+			<value>patreon_campaign_id</value>
+			<value></value>
+			<value>0</value>
+		</row>
+		<row>
+			<value>patreon_webhook_secret</value>
+			<value>test_secret_123</value>
+			<value>0</value>
+		</row>
+		<row>
+			<value>patreon_tier_group_map</value>
+			<value>{"tier-1": 5}</value>
+			<value>0</value>
+		</row>
+		<row>
+			<value>patreon_grace_period_days</value>
+			<value>0</value>
+			<value>0</value>
+		</row>
+		<row>
+			<value>patreon_last_cron_sync</value>
+			<value>0</value>
+			<value>0</value>
+		</row>
+		<row>
+			<value>patreon_tier_labels</value>
+			<value>{}</value>
+			<value>0</value>
+		</row>
+		<row>
+			<value>auth_oauth_patreon_key</value>
+			<value></value>
+			<value>0</value>
+		</row>
+		<row>
+			<value>auth_oauth_patreon_secret</value>
+			<value></value>
+			<value>0</value>
+		</row>
+	</table>
+
+	<table name="phpbb_patreon_sync">
+		<column>patreon_user_id</column>
+		<column>tier_id</column>
+		<column>tier_label</column>
+		<column>pledge_status</column>
+		<column>pledge_cents</column>
+		<column>last_webhook_at</column>
+		<column>last_synced_at</column>
+	</table>
+</dataset>
