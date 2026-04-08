@@ -159,7 +159,7 @@ class ucp_controller
 
 				$this->group_mapper->demote_from_all_patron_groups($user_id);
 
-				$this->log->add('user', $user_id, $this->user->ip, 'LOG_PATREON_UNLINKED', false, [
+				$this->log->add('admin', $user_id, $this->user->ip, 'LOG_PATREON_UNLINKED', false, [
 					$this->user->data['username'],
 					$patreon_user_id,
 				]);
@@ -305,7 +305,7 @@ class ucp_controller
 		$this->group_mapper->sync_user_groups($user_id, $tier_id, $patron_status);
 
 		// Log the link event
-		$this->log->add('user', $user_id, $this->user->ip, 'LOG_PATREON_LINKED', false, [
+		$this->log->add('admin', $user_id, $this->user->ip, 'LOG_PATREON_LINKED', false, [
 			$this->user->data['username'],
 			$patreon_user_id,
 			$tier_label ?: '-',

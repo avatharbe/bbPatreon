@@ -49,6 +49,7 @@ services:
             - '@config'
             - '@dbal.conn'
             - '@log'
+            - '@request'
             - '@avathar.bbpatreon.service.group_mapper'
             - '@dispatcher'
             - '%avathar.bbpatreon.tables.patreon_sync%'

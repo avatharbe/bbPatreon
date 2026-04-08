@@ -24,6 +24,9 @@ class webhook
 	/** @var \phpbb\log\log_interface */
 	protected $log;
 
+	/** @var \phpbb\request\request */
+	protected $request;
+
 	/** @var \avathar\bbpatreon\service\group_mapper */
 	protected $group_mapper;
 
@@ -43,6 +46,7 @@ class webhook
 		\phpbb\config\config $config,
 		\phpbb\db\driver\driver_interface $db,
 		\phpbb\log\log_interface $log,
+		\phpbb\request\request $request,
 		\avathar\bbpatreon\service\group_mapper $group_mapper,
 		\phpbb\event\dispatcher_interface $dispatcher,
 		string $patreon_sync_table,
@@ -52,6 +56,7 @@ class webhook
 		$this->config				= $config;
 		$this->db					= $db;
 		$this->log					= $log;
+		$this->request				= $request;
 		$this->group_mapper			= $group_mapper;
 		$this->dispatcher			= $dispatcher;
 		$this->patreon_sync_table	= $patreon_sync_table;
@@ -68,7 +73,7 @@ class webhook
 		$body = file_get_contents('php://input');
 
 		// Validate HMAC-MD5 signature
-		$signature = isset($_SERVER['HTTP_X_PATREON_SIGNATURE']) ? $_SERVER['HTTP_X_PATREON_SIGNATURE'] : '';
+		$signature = $this->request->server('HTTP_X_PATREON_SIGNATURE', '');
 		$secret = $this->config['patreon_webhook_secret'];
 
 		if (empty($secret) || empty($signature))
@@ -85,7 +90,7 @@ class webhook
 		}
 
 		// Parse event type and body
-		$event_type = isset($_SERVER['HTTP_X_PATREON_EVENT']) ? $_SERVER['HTTP_X_PATREON_EVENT'] : '';
+		$event_type = $this->request->server('HTTP_X_PATREON_EVENT', '');
 		$payload = json_decode($body, true);
 
 		if (!$payload || !isset($payload['data']))
