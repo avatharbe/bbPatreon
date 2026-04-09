@@ -88,32 +88,32 @@ class acp_controller
 		// Handle form submissions
 		if ($this->request->is_set_post('submit'))
 		{
-            $errors = $this->SetSettings($errors);
-        }
+			$errors = $this->SetSettings($errors);
+		}
 		else if ($this->request->is_set_post('sync'))
 		{
-            $errors = $this->SyncMembers($errors);
-        }
+			$errors = $this->SyncMembers($errors);
+		}
 		else if ($this->request->is_set_post('fetch_campaign'))
 		{
-            $errors = $this->FetchCampaign($errors);
-        }
+			$errors = $this->FetchCampaign($errors);
+		}
 		else if ($this->request->is_set_post('fetch_tiers'))
 		{
-            $errors = $this->ExtractTiers($errors);
-        }
+			$errors = $this->ExtractTiers($errors);
+		}
 		else if ($this->request->is_set_post('register_webhook'))
 		{
-            $errors = $this->RegisterWebhooks($errors);
-        }
+			$errors = $this->RegisterWebhooks($errors);
+		}
 		else if ($this->request->is_set_post('check_webhook'))
 		{
-            $errors = $this->CheckWebhookStatus($errors);
-        }
+			$errors = $this->CheckWebhookStatus($errors);
+		}
 		else if ($this->request->is_set_post('test_webhook'))
 		{
-            $errors = $this->TestWebhook($errors);
-        }
+			$errors = $this->TestWebhook($errors);
+		}
 
 		$s_errors = !empty($errors);
 
@@ -178,10 +178,10 @@ class acp_controller
 		}
 	}
 
-    /**
-     * core function for saving acp settings
-     * @return void
-     */
+	/**
+	 * core function for saving acp settings
+	 * @return void
+	 */
 	protected function save_settings(): void
 	{
 		$client_id = $this->request->variable('patreon_client_id', '');
@@ -215,12 +215,12 @@ class acp_controller
 		$this->config->set('patreon_tier_group_map', json_encode($map));
 	}
 
-    /**
-     * Perform the manual sync
-     *
-     * @return string
-     */
-    protected function run_manual_sync(): string
+	/**
+	 * Perform the manual sync
+	 *
+	 * @return string
+	 */
+	protected function run_manual_sync(): string
 	{
 		$members = $this->api_client->get_campaign_members();
 
@@ -481,176 +481,210 @@ class acp_controller
 		$this->u_action = $u_action;
 	}
 
-    /**
-     *
-     * Save Patreon Settings
-     * @param array $errors
-     * @return array
-     */
-    public function SetSettings(array $errors): array
-    {
-        if (!check_form_key('avathar_bbpatreon_acp')) {
-            $errors[] = $this->language->lang('FORM_INVALID');
-        }
+	/**
+	 *
+	 * Save Patreon Settings
+	 * @param array $errors
+	 * @return array
+	 */
+	public function SetSettings(array $errors): array
+	{
+		if (!check_form_key('avathar_bbpatreon_acp'))
+		{
+			$errors[] = $this->language->lang('FORM_INVALID');
+		}
 
-        if (empty($errors)) {
-            $this->save_settings();
-            $this->log->add('admin', $this->user->data['user_id'], $this->user->ip, 'LOG_ACP_BBPATREON_SETTINGS');
-            trigger_error($this->language->lang('ACP_BBPATREON_SETTING_SAVED') . adm_back_link($this->u_action));
-        }
-        return $errors;
-    }
+		if (empty($errors))
+		{
+			$this->save_settings();
+			$this->log->add('admin', $this->user->data['user_id'], $this->user->ip, 'LOG_ACP_BBPATREON_SETTINGS');
+			trigger_error($this->language->lang('ACP_BBPATREON_SETTING_SAVED') . adm_back_link($this->u_action));
+		}
+		return $errors;
+	}
 
-    /**
-     * Sync the members from Patreon
-     * @param array $errors
-     * @return array
-     */
-    public function SyncMembers(array $errors): array
-    {
-        if (!check_form_key('avathar_bbpatreon_acp')) {
-            $errors[] = $this->language->lang('FORM_INVALID');
-        }
+	/**
+	 * Sync the members from Patreon
+	 * @param array $errors
+	 * @return array
+	 */
+	public function SyncMembers(array $errors): array
+	{
+		if (!check_form_key('avathar_bbpatreon_acp'))
+		{
+			$errors[] = $this->language->lang('FORM_INVALID');
+		}
 
-        if (empty($errors)) {
-            $result = $this->run_manual_sync();
-            trigger_error($result . adm_back_link($this->u_action));
-        }
-        return $errors;
-    }
+		if (empty($errors))
+		{
+			$result = $this->run_manual_sync();
+			trigger_error($result . adm_back_link($this->u_action));
+		}
+		return $errors;
+	}
 
-    /**
-     * Get the Patreon Campaign
-     *
-     * @param array $errors
-     * @return array
-     */
-    public function FetchCampaign(array $errors): array
-    {
-        if (!check_form_key('avathar_bbpatreon_acp')) {
-            $errors[] = $this->language->lang('FORM_INVALID');
-        }
+	/**
+	 * Get the Patreon Campaign
+	 *
+	 * @param array $errors
+	 * @return array
+	 */
+	public function FetchCampaign(array $errors): array
+	{
+		if (!check_form_key('avathar_bbpatreon_acp'))
+		{
+			$errors[] = $this->language->lang('FORM_INVALID');
+		}
 
-        if (empty($errors)) {
-            $result = $this->api_client->request('campaigns');
-            if (isset($result['data'][0]['id'])) {
-                $campaign_id = $result['data'][0]['id'];
-                $this->config->set('patreon_campaign_id', $campaign_id);
-                trigger_error($this->language->lang('ACP_BBPATREON_CAMPAIGN_FETCHED', $campaign_id) . adm_back_link($this->u_action));
-            } else {
-                $errors[] = $this->language->lang('ACP_BBPATREON_CAMPAIGN_FETCH_ERROR');
-            }
-        }
-        return $errors;
-    }
+		if (empty($errors))
+		{
+			$result = $this->api_client->request('campaigns');
+			if (isset($result['data'][0]['id']))
+			{
+				$campaign_id = $result['data'][0]['id'];
+				$this->config->set('patreon_campaign_id', $campaign_id);
+				trigger_error($this->language->lang('ACP_BBPATREON_CAMPAIGN_FETCHED', $campaign_id) . adm_back_link($this->u_action));
+			}
+			else
+			{
+				$errors[] = $this->language->lang('ACP_BBPATREON_CAMPAIGN_FETCH_ERROR');
+			}
+		}
+		return $errors;
+	}
 
-    /**
-     * Get the Tiers by API Call
-     * @param array $errors
-     * @return array
-     */
-    public function ExtractTiers(array $errors): array
-    {
-        if (!check_form_key('avathar_bbpatreon_acp')) {
-            $errors[] = $this->language->lang('FORM_INVALID');
-        }
+	/**
+	 * Get the Tiers by API Call
+	 * @param array $errors
+	 * @return array
+	 */
+	public function ExtractTiers(array $errors): array
+	{
+		if (!check_form_key('avathar_bbpatreon_acp'))
+		{
+			$errors[] = $this->language->lang('FORM_INVALID');
+		}
 
-        if (empty($errors)) {
-            $campaign_id = $this->config['patreon_campaign_id'];
-            if (empty($campaign_id)) {
-                $errors[] = $this->language->lang('ACP_BBPATREON_FETCH_TIERS_NO_CAMPAIGN');
-            } else {
-                $result = $this->api_client->request('campaigns/' . $campaign_id . '?include=tiers&fields[tier]=title,amount_cents');
-                $tiers = [];
-                if (isset($result['included'])) {
-                    foreach ($result['included'] as $resource) {
-                        if ($resource['type'] === 'tier') {
-                            $tiers[$resource['id']] = $resource['attributes']['title'] ?? '';
-                        }
-                    }
-                }
+		if (empty($errors))
+		{
+			$campaign_id = $this->config['patreon_campaign_id'];
+			if (empty($campaign_id))
+			{
+				$errors[] = $this->language->lang('ACP_BBPATREON_FETCH_TIERS_NO_CAMPAIGN');
+			}
+			else
+			{
+				$result = $this->api_client->request('campaigns/' . $campaign_id . '?include=tiers&fields[tier]=title,amount_cents');
+				$tiers = [];
+				if (isset($result['included']))
+				{
+					foreach ($result['included'] as $resource)
+					{
+						if ($resource['type'] === 'tier')
+						{
+							$tiers[$resource['id']] = $resource['attributes']['title'] ?? '';
+						}
+					}
+				}
 
-                if (empty($tiers)) {
-                    $errors[] = $this->language->lang('ACP_BBPATREON_FETCH_TIERS_EMPTY');
-                } else {
-                    // Merge fetched tiers into existing map, preserving existing group assignments
-                    $existing_map = json_decode($this->config['patreon_tier_group_map'], true) ?: [];
-                    foreach ($tiers as $tid => $title) {
-                        if (!isset($existing_map[$tid])) {
-                            $existing_map[$tid] = 0;
-                        }
-                    }
-                    $this->config->set('patreon_tier_group_map', json_encode($existing_map));
+				if (empty($tiers))
+				{
+					$errors[] = $this->language->lang('ACP_BBPATREON_FETCH_TIERS_EMPTY');
+				}
+				else
+				{
+					// Merge fetched tiers into existing map, preserving existing group assignments
+					$existing_map = json_decode($this->config['patreon_tier_group_map'], true) ?: [];
+					foreach ($tiers as $tid => $title)
+					{
+						if (!isset($existing_map[$tid]))
+						{
+							$existing_map[$tid] = 0;
+						}
+					}
+					$this->config->set('patreon_tier_group_map', json_encode($existing_map));
 
-                    // Store tier labels for display
-                    $this->config->set('patreon_tier_labels', json_encode($tiers));
+					// Store tier labels for display
+					$this->config->set('patreon_tier_labels', json_encode($tiers));
 
-                    trigger_error($this->language->lang('ACP_BBPATREON_FETCH_TIERS_DONE', count($tiers)) . adm_back_link($this->u_action));
-                }
-            }
-        }
-        return $errors;
-    }
+					trigger_error($this->language->lang('ACP_BBPATREON_FETCH_TIERS_DONE', count($tiers)) . adm_back_link($this->u_action));
+				}
+			}
+		}
+		return $errors;
+	}
 
-    /**
-     * register the webhooks
-     *
-     * @param array $errors
-     * @return array
-     */
-    public function RegisterWebhooks(array $errors): array
-    {
-        if (!check_form_key('avathar_bbpatreon_acp')) {
-            $errors[] = $this->language->lang('FORM_INVALID');
-        }
+	/**
+	 * register the webhooks
+	 *
+	 * @param array $errors
+	 * @return array
+	 */
+	public function RegisterWebhooks(array $errors): array
+	{
+		if (!check_form_key('avathar_bbpatreon_acp'))
+		{
+			$errors[] = $this->language->lang('FORM_INVALID');
+		}
 
-        if (empty($errors)) {
-            $result = $this->register_webhook();
-            if (isset($result['error'])) {
-                $errors[] = $result['error'];
-            } else {
-                trigger_error($this->language->lang('ACP_BBPATREON_WEBHOOK_REGISTERED') . adm_back_link($this->u_action));
-            }
-        }
-        return $errors;
-    }
+		if (empty($errors))
+		{
+			$result = $this->register_webhook();
+			if (isset($result['error']))
+			{
+				$errors[] = $result['error'];
+			}
+			else
+			{
+				trigger_error($this->language->lang('ACP_BBPATREON_WEBHOOK_REGISTERED') . adm_back_link($this->u_action));
+			}
+		}
+		return $errors;
+	}
 
-    /**
-     * Check Webhook Status
-     * @param array $errors
-     * @return array
-     */
-    public function CheckWebhookStatus(array $errors): array
-    {
-        if (!check_form_key('avathar_bbpatreon_acp')) {
-            $errors[] = $this->language->lang('FORM_INVALID');
-        }
+	/**
+	 * Check Webhook Status
+	 * @param array $errors
+	 * @return array
+	 */
+	public function CheckWebhookStatus(array $errors): array
+	{
+		if (!check_form_key('avathar_bbpatreon_acp'))
+		{
+			$errors[] = $this->language->lang('FORM_INVALID');
+		}
 
-        if (empty($errors)) {
-            $result = $this->check_webhook_status();
-            if ($result === null) {
-                $errors[] = $this->language->lang('ACP_BBPATREON_WEBHOOK_CHECK_ERROR');
-            } else {
-                trigger_error($result . adm_back_link($this->u_action));
-            }
-        }
-        return $errors;
-    }
+		if (empty($errors))
+		{
+			$result = $this->check_webhook_status();
+			if ($result === null)
+			{
+				$errors[] = $this->language->lang('ACP_BBPATREON_WEBHOOK_CHECK_ERROR');
+			}
+			else
+			{
+				trigger_error($result . adm_back_link($this->u_action));
+			}
+		}
+		return $errors;
+	}
 
-    /**
-     * @param array $errors
-     * @return array
-     */
-    public function TestWebhook(array $errors): array
-    {
-        if (!check_form_key('avathar_bbpatreon_acp')) {
-            $errors[] = $this->language->lang('FORM_INVALID');
-        }
+	/**
+	 * @param array $errors
+	 * @return array
+	 */
+	public function TestWebhook(array $errors): array
+	{
+		if (!check_form_key('avathar_bbpatreon_acp'))
+		{
+			$errors[] = $this->language->lang('FORM_INVALID');
+		}
 
-        if (empty($errors)) {
-            $result = $this->test_webhook();
-            trigger_error($result . adm_back_link($this->u_action));
-        }
-        return $errors;
-    }
+		if (empty($errors))
+		{
+			$result = $this->test_webhook();
+			trigger_error($result . adm_back_link($this->u_action));
+		}
+		return $errors;
+	}
 }
