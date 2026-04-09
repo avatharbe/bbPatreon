@@ -141,37 +141,8 @@ class ucp_controller
 		// Handle unlink
 		if ($this->request->is_set_post('unlink') && $is_linked)
 		{
-			if (!check_form_key('avathar_bbpatreon_ucp'))
-			{
-				$errors[] = $this->language->lang('FORM_INVALID');
-			}
-
-			if (empty($errors))
-			{
-				$sql = 'DELETE FROM ' . $this->patreon_sync_table . "
-					WHERE patreon_user_id = '" . $this->db->sql_escape($patreon_user_id) . "'";
-				$this->db->sql_query($sql);
-
-				$sql = 'DELETE FROM ' . $this->oauth_accounts_table . "
-					WHERE user_id = " . $user_id . "
-						AND provider = 'patreon'";
-				$this->db->sql_query($sql);
-
-				$this->group_mapper->demote_from_all_patron_groups($user_id);
-
-				$this->log->add('admin', $user_id, $this->user->ip, 'LOG_PATREON_UNLINKED', false, [
-					$this->user->data['username'],
-					$patreon_user_id,
-				]);
-
-				$is_linked = false;
-				$patreon_user_id = '';
-
-				meta_refresh(3, $this->u_action);
-				$message = $this->language->lang('UCP_BBPATREON_UNLINKED') . '<br><br>' . $this->language->lang('RETURN_UCP', '<a href="' . $this->u_action . '">', '</a>');
-				trigger_error($message);
-			}
-		}
+            list($errors, $sql, $is_linked, $patreon_user_id) = $this->HandleUnlinking($errors, $patreon_user_id, $user_id, $is_linked);
+        }
 
 		// Get sync data if linked
 		$sync_data = [];
@@ -385,4 +356,44 @@ class ucp_controller
 	{
 		$this->u_action = $u_action;
 	}
+
+    /**
+     * @param array $errors
+     * @param mixed $patreon_user_id
+     * @param int $user_id
+     * @param bool $is_linked
+     * @return array
+     */
+    public function HandleUnlinking(array $errors, mixed $patreon_user_id, int $user_id, bool $is_linked): array
+    {
+        if (!check_form_key('avathar_bbpatreon_ucp')) {
+            $errors[] = $this->language->lang('FORM_INVALID');
+        }
+
+        if (empty($errors)) {
+            $sql = 'DELETE FROM ' . $this->patreon_sync_table . "
+					WHERE patreon_user_id = '" . $this->db->sql_escape($patreon_user_id) . "'";
+            $this->db->sql_query($sql);
+
+            $sql = 'DELETE FROM ' . $this->oauth_accounts_table . "
+					WHERE user_id = " . $user_id . "
+						AND provider = 'patreon'";
+            $this->db->sql_query($sql);
+
+            $this->group_mapper->demote_from_all_patron_groups($user_id);
+
+            $this->log->add('admin', $user_id, $this->user->ip, 'LOG_PATREON_UNLINKED', false, [
+                $this->user->data['username'],
+                $patreon_user_id,
+            ]);
+
+            $is_linked = false;
+            $patreon_user_id = '';
+
+            meta_refresh(3, $this->u_action);
+            $message = $this->language->lang('UCP_BBPATREON_UNLINKED') . '<br><br>' . $this->language->lang('RETURN_UCP', '<a href="' . $this->u_action . '">', '</a>');
+            trigger_error($message);
+        }
+        return array($errors, $sql, $is_linked, $patreon_user_id);
+    }
 }
