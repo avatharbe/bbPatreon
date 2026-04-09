@@ -5,7 +5,7 @@
  * Tests the event listener that hooks into phpBB's language loading and
  * OAuth login flow to trigger Patreon-specific sync logic.
  *
- * @copyright (c) 2024 Sajaki
+ * @copyright (c) 2026 A. Vandenberghe
  * @license GNU General Public License, version 2 (GPL-2.0)
  *
  */

@@ -4,7 +4,7 @@
  * Patreon Integration for phpBB.
  * Patreon API v2 client using creator access token.
  *
- * @copyright (c) 2024 Sajaki
+ * @copyright (c) 2026 A. Vandenberghe
  * @license GNU General Public License, version 2 (GPL-2.0)
  *
  */

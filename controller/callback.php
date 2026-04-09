@@ -5,7 +5,7 @@
  * OAuth callback controller — Patreon redirects here after authorization.
  * Forwards the code to the UCP module for processing.
  *
- * @copyright (c) 2024 Sajaki
+ * @copyright (c) 2026 A. Vandenberghe
  * @license GNU General Public License, version 2 (GPL-2.0)
  *
  */

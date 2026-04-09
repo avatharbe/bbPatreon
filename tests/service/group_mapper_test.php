@@ -5,7 +5,7 @@
  * Tests the group_mapper service which resolves Patreon tiers to phpBB
  * groups and decides whether to promote, demote, or skip a user.
  *
- * @copyright (c) 2024 Sajaki
+ * @copyright (c) 2026 A. Vandenberghe
  * @license GNU General Public License, version 2 (GPL-2.0)
  *
  */

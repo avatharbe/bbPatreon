@@ -4,7 +4,7 @@
  * Patreon Integration for phpBB.
  * Event listener.
  *
- * @copyright (c) 2024 Sajaki
+ * @copyright (c) 2026 A. Vandenberghe
  * @license GNU General Public License, version 2 (GPL-2.0)
  *
  */

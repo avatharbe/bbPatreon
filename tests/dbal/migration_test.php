@@ -4,7 +4,7 @@
  * Patreon Integration for phpBB.
  * Tests that the v1_0_0 migration correctly seeds all required config keys.
  *
- * @copyright (c) 2024 Sajaki
+ * @copyright (c) 2026 A. Vandenberghe
  * @license GNU General Public License, version 2 (GPL-2.0)
  *
  */
