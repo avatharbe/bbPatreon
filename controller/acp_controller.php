@@ -496,7 +496,7 @@ class acp_controller
 			'BRL' => 'R$', 'MXN' => 'MX$',
 		];
 
-		$currency = $this->config['patreon_currency'] ?? 'USD';
+		$currency = !empty($this->config['patreon_currency']) ? $this->config['patreon_currency'] : 'USD';
 		$symbol = $symbols[$currency] ?? $currency . ' ';
 
 		return $symbol . number_format($cents / 100, 2);

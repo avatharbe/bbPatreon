@@ -367,7 +367,7 @@ class ucp_controller
 			'BRL' => 'R$', 'MXN' => 'MX$',
 		];
 
-		$currency = $this->config['patreon_currency'] ?? 'USD';
+		$currency = !empty($this->config['patreon_currency']) ? $this->config['patreon_currency'] : 'USD';
 		$symbol = $symbols[$currency] ?? $currency . ' ';
 
 		return $symbol . number_format($cents / 100, 2);
@@ -399,7 +399,7 @@ class ucp_controller
 			$this->db->sql_query($sql);
 
 			$sql = 'DELETE FROM ' . $this->oauth_accounts_table . "
-					WHERE user_id = " . $user_id . "
+					WHERE user_id = " . (int) $user_id . "
 						AND provider = 'patreon'";
 			$this->db->sql_query($sql);
 
