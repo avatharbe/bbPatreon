@@ -35,11 +35,6 @@
 			<value>0</value>
 		</row>
 		<row>
-			<value>patreon_tier_group_map</value>
-			<value>{"tier-1": 5}</value>
-			<value>0</value>
-		</row>
-		<row>
 			<value>patreon_grace_period_days</value>
 			<value>0</value>
 			<value>0</value>
@@ -47,11 +42,6 @@
 		<row>
 			<value>patreon_last_cron_sync</value>
 			<value>0</value>
-			<value>0</value>
-		</row>
-		<row>
-			<value>patreon_tier_labels</value>
-			<value>{}</value>
 			<value>0</value>
 		</row>
 		<row>

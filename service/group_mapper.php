@@ -16,6 +16,9 @@ class group_mapper
 	/** @var \phpbb\config\config */
 	protected $config;
 
+	/** @var \phpbb\config\db_text */
+	protected $config_text;
+
 	/** @var \phpbb\db\driver\driver_interface */
 	protected $db;
 
@@ -26,6 +29,7 @@ class group_mapper
 	 * Constructor.
 	 *
 	 * @param \phpbb\config\config				$config
+	 * @param \phpbb\config\db_text				$config_text
 	 * @param \phpbb\db\driver\driver_interface	$db
 	 * @param \phpbb\log\log_interface			$log
 	 * @param string							$root_path
@@ -33,15 +37,17 @@ class group_mapper
 	 */
 	public function __construct(
 		\phpbb\config\config $config,
+		\phpbb\config\db_text $config_text,
 		\phpbb\db\driver\driver_interface $db,
 		\phpbb\log\log_interface $log,
 		string $root_path,
 		string $php_ext
 	)
 	{
-		$this->config	= $config;
-		$this->db		= $db;
-		$this->log		= $log;
+		$this->config		= $config;
+		$this->config_text	= $config_text;
+		$this->db			= $db;
+		$this->log			= $log;
 
 		if (!function_exists('group_user_add'))
 		{
@@ -56,7 +62,7 @@ class group_mapper
 	 */
 	public function get_tier_group_map(): array
 	{
-		$map = json_decode($this->config['patreon_tier_group_map'], true);
+		$map = json_decode($this->config_text->get('patreon_tier_group_map') ?: '{}', true);
 		return is_array($map) ? $map : [];
 	}
 

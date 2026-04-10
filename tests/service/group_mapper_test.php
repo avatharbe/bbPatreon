@@ -26,6 +26,9 @@ class group_mapper_test extends \phpbb_test_case
 	protected $config;
 
 	/** @var \PHPUnit\Framework\MockObject\MockObject */
+	protected $config_text;
+
+	/** @var \PHPUnit\Framework\MockObject\MockObject */
 	protected $db;
 
 	/** @var \PHPUnit\Framework\MockObject\MockObject */
@@ -35,6 +38,7 @@ class group_mapper_test extends \phpbb_test_case
 	{
 		parent::setUp();
 
+		$this->config_text = $this->createMock('\phpbb\config\db_text');
 		$this->db = $this->createMock('\phpbb\db\driver\driver_interface');
 		$this->log = $this->createMock('\phpbb\log\log_interface');
 	}
@@ -51,14 +55,29 @@ class group_mapper_test extends \phpbb_test_case
 		global $phpbb_root_path, $phpEx;
 
 		$defaults = array(
-			'patreon_tier_group_map'	=> '{"tier-1": 5, "tier-2": 6}',
 			'patreon_grace_period_days'	=> 0,
+		);
+
+		$config_text_data = array(
+			'patreon_tier_group_map'	=> '{"tier-1": 5, "tier-2": 6}',
 		);
 
 		$this->config = new \phpbb\config\config(array_merge($defaults, $config_data));
 
+		// Merge any config_text overrides from config_data
+		if (isset($config_data['patreon_tier_group_map']))
+		{
+			$config_text_data['patreon_tier_group_map'] = $config_data['patreon_tier_group_map'];
+		}
+
+		$this->config_text->method('get')
+			->willReturnCallback(function ($key) use ($config_text_data) {
+				return $config_text_data[$key] ?? null;
+			});
+
 		return new \avathar\bbpatreon\service\group_mapper(
 			$this->config,
+			$this->config_text,
 			$this->db,
 			$this->log,
 			$phpbb_root_path,
