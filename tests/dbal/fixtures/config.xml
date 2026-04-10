@@ -56,6 +56,19 @@
 		</row>
 	</table>
 
+	<table name="phpbb_config_text">
+		<column>config_name</column>
+		<column>config_value</column>
+		<row>
+			<value>patreon_tier_group_map</value>
+			<value>{}</value>
+		</row>
+		<row>
+			<value>patreon_tier_labels</value>
+			<value>{}</value>
+		</row>
+	</table>
+
 	<table name="phpbb_patreon_sync">
 		<column>patreon_user_id</column>
 		<column>tier_id</column>

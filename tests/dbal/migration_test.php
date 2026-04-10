@@ -74,4 +74,67 @@ class migration_test extends \phpbb_database_test_case
 			$this->assertNotFalse($row, "Config key '$key' should exist after migration");
 		}
 	}
+
+	/**
+	 * Tier labels with many tiers and emoji can exceed the 255-char limit
+	 * of phpbb_config. This test verifies that config_text can store the
+	 * kind of payload that triggered issue #6.
+	 *
+	 * @see https://github.com/avatharbe/bbPatreon/issues/6
+	 */
+	public function test_config_text_stores_long_tier_labels()
+	{
+		$config_text = new \phpbb\config\db_text($this->db, 'phpbb_config_text');
+
+		// Realistic payload from the bug report — 10 tiers with emoji
+		$tier_labels = json_encode(array(
+			'10425190' => 'Free',
+			'3116836'  => "Suck Less Thumbs Up",
+			'4249194'  => "Suck Less TWO Thumbs Up",
+			'8043226'  => "Suck Less THREE Thumbs Up!",
+			'9553953'  => "4 is the smallest COMPOSITE number \xF0\x9F\x98\x81",
+			'3088625'  => "Suck Less High Five",
+			'4249251'  => "Suck Less On Tap",
+			'3132211'  => "Suck Less Sweet Sixteen",
+			'7436306'  => "WSL (WSL Sponsor Level)",
+			'3116840'  => "Suck Less Sugarnonckle",
+		));
+
+		$this->assertGreaterThan(255, strlen($tier_labels), 'Test payload must exceed 255 chars to be meaningful');
+
+		$config_text->set('patreon_tier_labels', $tier_labels);
+		$value = $config_text->get('patreon_tier_labels');
+
+		$this->assertEquals($tier_labels, $value, 'config_text must store and retrieve long JSON without truncation');
+
+		$decoded = json_decode($value, true);
+		$this->assertCount(10, $decoded, 'All 10 tiers must survive the round-trip');
+	}
+
+	/**
+	 * Verify that a large tier-group map with many tiers can be stored
+	 * and retrieved without truncation.
+	 */
+	public function test_config_text_stores_long_tier_group_map()
+	{
+		$config_text = new \phpbb\config\db_text($this->db, 'phpbb_config_text');
+
+		// Build a map with 20 tiers to exceed 255 chars
+		$map = array();
+		for ($i = 1; $i <= 20; $i++)
+		{
+			$map['tier_' . str_pad($i, 8, '0', STR_PAD_LEFT)] = $i + 100;
+		}
+		$json = json_encode($map);
+
+		$this->assertGreaterThan(255, strlen($json), 'Test payload must exceed 255 chars to be meaningful');
+
+		$config_text->set('patreon_tier_group_map', $json);
+		$value = $config_text->get('patreon_tier_group_map');
+
+		$this->assertEquals($json, $value, 'config_text must store and retrieve long JSON without truncation');
+
+		$decoded = json_decode($value, true);
+		$this->assertCount(20, $decoded, 'All 20 tier mappings must survive the round-trip');
+	}
 }
