@@ -402,32 +402,6 @@ ACP has a "Register via API" button that POSTs to `/api/oauth2/v2/webhooks`.
 
 ---
 
-## Planned Features
-
-### Supporters Page with Opt-In Privacy
-
-A public-facing supporters page (`/patreon/supporters`) that lists forum members who are active patrons. Visibility is governed by two controls:
-
-**ACP master switch:** The board owner enables or disables the supporters page globally. When disabled, the UCP opt-in toggle is hidden and no patron data is publicly accessible.
-
-**UCP opt-in (default: off):** Each user decides whether to appear on the supporters page via a "Show me as a supporter on this forum" checkbox. No patron data is ever shown publicly without explicit user consent.
-
-**What is shown publicly:** Username and tier name only. Pledge amounts are never displayed publicly — they remain visible only to administrators in the ACP linked users table.
-
-**Privacy guarantees:**
-- Opt-in by default — no user appears on the supporters page unless they explicitly consent
-- The board owner cannot override individual user consent (only enable/disable the feature globally)
-- Unlinking a Patreon account automatically revokes visibility consent
-
-**Implementation notes:**
-- New column `show_public` (TINYINT, default 0) in `phpbb_patreon_sync`
-- New ACP toggle `patreon_supporters_page_enabled` (default: disabled)
-- New route `/patreon/supporters` with a dedicated controller
-- UCP template updated with opt-in checkbox (only shown when ACP toggle is enabled)
-- The supporters page can be extended or embedded by third-party extensions via template events and a `patron_data_provider` service
-
----
-
 ## Out of Scope (Future Considerations)
 
 - Displaying patron-only forum sections (handled by phpBB's native group-based forum permissions once groups are assigned)
