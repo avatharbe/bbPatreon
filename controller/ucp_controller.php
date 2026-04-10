@@ -166,7 +166,7 @@ class ucp_controller
 			'PATREON_USER_ID'		=> $patreon_user_id,
 			'PATREON_TIER_LABEL'	=> $sync_data['tier_label'] ?? '',
 			'PATREON_PLEDGE_STATUS'	=> $sync_data['pledge_status'] ?? '',
-			'PATREON_PLEDGE_AMOUNT'	=> isset($sync_data['pledge_cents']) ? number_format($sync_data['pledge_cents'] / 100, 2) : '0.00',
+			'PATREON_PLEDGE_AMOUNT'	=> isset($sync_data['pledge_cents']) ? $this->format_currency((int) $sync_data['pledge_cents']) : $this->format_currency(0),
 		]);
 	}
 
@@ -350,6 +350,27 @@ class ucp_controller
 		}
 
 		$this->db->sql_query($sql);
+	}
+
+	/**
+	 * Format a pledge amount in cents with the campaign currency symbol.
+	 *
+	 * @param int $cents
+	 * @return string
+	 */
+	protected function format_currency(int $cents): string
+	{
+		$symbols = [
+			'USD' => '$', 'EUR' => '€', 'GBP' => '£', 'CAD' => 'CA$',
+			'AUD' => 'A$', 'NZD' => 'NZ$', 'JPY' => '¥', 'CHF' => 'CHF ',
+			'SEK' => 'kr ', 'NOK' => 'kr ', 'DKK' => 'kr ', 'PLN' => 'zł',
+			'BRL' => 'R$', 'MXN' => 'MX$',
+		];
+
+		$currency = $this->config['patreon_currency'] ?? 'USD';
+		$symbol = $symbols[$currency] ?? $currency . ' ';
+
+		return $symbol . number_format($cents / 100, 2);
 	}
 
 	public function set_page_url($u_action)

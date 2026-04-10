@@ -60,6 +60,7 @@ class migration_test extends \phpbb_database_test_case
 			'patreon_creator_refresh_token',
 			'patreon_campaign_id',
 			'patreon_webhook_secret',
+			'patreon_currency',
 			'patreon_grace_period_days',
 			'patreon_last_cron_sync',
 		);

@@ -61,6 +61,7 @@ class v1_0_0_initial extends \phpbb\db\migration\migration
 			['config.add', ['patreon_creator_refresh_token', '']],
 			['config.add', ['patreon_campaign_id', '']],
 			['config.add', ['patreon_webhook_secret', '']],
+			['config.add', ['patreon_currency', 'USD']],
 			['config.add', ['patreon_grace_period_days', 0]],
 			['config_text.add', ['patreon_tier_group_map', '{}']],
 			['config_text.add', ['patreon_tier_labels', '{}']],

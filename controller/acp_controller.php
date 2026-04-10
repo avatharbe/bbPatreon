@@ -176,7 +176,7 @@ class acp_controller
 				'PATREON_USER_ID'	=> $lu['patreon_user_id'],
 				'TIER_LABEL'		=> $lu['tier_label'],
 				'PLEDGE_STATUS'		=> $lu['pledge_status'],
-				'PLEDGE_AMOUNT'		=> number_format($lu['pledge_cents'] / 100, 2),
+				'PLEDGE_AMOUNT'		=> $this->format_currency($lu['pledge_cents']),
 				'LAST_WEBHOOK'		=> $lu['last_webhook_at'] ? $this->user->format_date((int) $lu['last_webhook_at']) : '-',
 				'LAST_SYNCED'		=> $lu['last_synced_at'] ? $this->user->format_date((int) $lu['last_synced_at']) : '-',
 			]);
@@ -481,6 +481,27 @@ class acp_controller
 		$this->db->sql_query($sql);
 	}
 
+	/**
+	 * Format a pledge amount in cents with the campaign currency symbol.
+	 *
+	 * @param int $cents
+	 * @return string
+	 */
+	protected function format_currency(int $cents): string
+	{
+		$symbols = [
+			'USD' => '$', 'EUR' => '€', 'GBP' => '£', 'CAD' => 'CA$',
+			'AUD' => 'A$', 'NZD' => 'NZ$', 'JPY' => '¥', 'CHF' => 'CHF ',
+			'SEK' => 'kr ', 'NOK' => 'kr ', 'DKK' => 'kr ', 'PLN' => 'zł',
+			'BRL' => 'R$', 'MXN' => 'MX$',
+		];
+
+		$currency = $this->config['patreon_currency'] ?? 'USD';
+		$symbol = $symbols[$currency] ?? $currency . ' ';
+
+		return $symbol . number_format($cents / 100, 2);
+	}
+
 	public function set_page_url($u_action)
 	{
 		$this->u_action = $u_action;
@@ -543,11 +564,15 @@ class acp_controller
 
 		if (empty($errors))
 		{
-			$result = $this->api_client->request('campaigns');
+			$result = $this->api_client->request('campaigns?fields[campaign]=currency');
 			if (isset($result['data'][0]['id']))
 			{
 				$campaign_id = $result['data'][0]['id'];
 				$this->config->set('patreon_campaign_id', $campaign_id);
+
+				$currency = $result['data'][0]['attributes']['currency'] ?? 'USD';
+				$this->config->set('patreon_currency', $currency);
+
 				trigger_error($this->language->lang('ACP_BBPATREON_CAMPAIGN_FETCHED', $campaign_id) . adm_back_link($this->u_action));
 			}
 			else

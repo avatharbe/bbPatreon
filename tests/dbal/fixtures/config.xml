@@ -35,6 +35,11 @@
 			<value>0</value>
 		</row>
 		<row>
+			<value>patreon_currency</value>
+			<value>USD</value>
+			<value>0</value>
+		</row>
+		<row>
 			<value>patreon_grace_period_days</value>
 			<value>0</value>
 			<value>0</value>
