@@ -28,6 +28,7 @@ services:
         class: avathar\bbpatreon\service\group_mapper
         arguments:
             - '@config'
+            - '@config_text'
             - '@dbal.conn'
             - '@log'
             - '%core.root_path%'
@@ -72,6 +73,7 @@ services:
             - '@user'
             - '@avathar.bbpatreon.service.api_client'
             - '@avathar.bbpatreon.service.group_mapper'
+            - '@config_text'
             - '%avathar.bbpatreon.tables.patreon_sync%'
             - '%tables.auth_provider_oauth_account_assoc%'
 

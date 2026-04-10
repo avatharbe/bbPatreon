@@ -40,6 +40,9 @@ class acp_controller
 	/** @var \avathar\bbpatreon\service\group_mapper */
 	protected $group_mapper;
 
+	/** @var \phpbb\config\db_text */
+	protected $config_text;
+
 	/** @var string */
 	protected $patreon_sync_table;
 
@@ -59,6 +62,7 @@ class acp_controller
 		\phpbb\user $user,
 		\avathar\bbpatreon\service\api_client $api_client,
 		\avathar\bbpatreon\service\group_mapper $group_mapper,
+		\phpbb\config\db_text $config_text,
 		string $patreon_sync_table,
 		string $oauth_accounts_table
 	)
@@ -72,6 +76,7 @@ class acp_controller
 		$this->user					= $user;
 		$this->api_client			= $api_client;
 		$this->group_mapper			= $group_mapper;
+		$this->config_text			= $config_text;
 		$this->patreon_sync_table	= $patreon_sync_table;
 		$this->oauth_accounts_table	= $oauth_accounts_table;
 	}
@@ -124,8 +129,8 @@ class acp_controller
 		$groups = $this->get_phpbb_groups();
 
 		// Parse tier-group map and tier labels for display
-		$tier_group_map = json_decode($this->config['patreon_tier_group_map'], true) ?: [];
-		$tier_labels = json_decode($this->config['patreon_tier_labels'] ?? '{}', true) ?: [];
+		$tier_group_map = json_decode($this->config_text->get('patreon_tier_group_map') ?: '{}', true) ?: [];
+		$tier_labels = json_decode($this->config_text->get('patreon_tier_labels') ?: '{}', true) ?: [];
 
 		$this->template->assign_vars([
 			'S_ERROR'		=> $s_errors,
@@ -140,7 +145,7 @@ class acp_controller
 			'PATREON_CAMPAIGN_ID'			=> $this->config['patreon_campaign_id'],
 			'PATREON_WEBHOOK_SECRET'		=> $this->config['patreon_webhook_secret'],
 			'PATREON_GRACE_PERIOD_DAYS'		=> (int) $this->config['patreon_grace_period_days'],
-			'PATREON_TIER_GROUP_MAP_JSON'	=> $this->config['patreon_tier_group_map'],
+			'PATREON_TIER_GROUP_MAP_JSON'	=> $this->config_text->get('patreon_tier_group_map') ?: '{}',
 			'PATREON_LAST_SYNC'				=> $this->config['patreon_last_cron_sync'] ? $this->user->format_date((int) $this->config['patreon_last_cron_sync']) : $this->language->lang('PATREON_NEVER'),
 		]);
 
@@ -212,7 +217,7 @@ class acp_controller
 				$map[$tid] = (int) $group_ids[$i];
 			}
 		}
-		$this->config->set('patreon_tier_group_map', json_encode($map));
+		$this->config_text->set('patreon_tier_group_map', json_encode($map));
 	}
 
 	/**
@@ -594,7 +599,7 @@ class acp_controller
 				else
 				{
 					// Merge fetched tiers into existing map, preserving existing group assignments
-					$existing_map = json_decode($this->config['patreon_tier_group_map'], true) ?: [];
+					$existing_map = json_decode($this->config_text->get('patreon_tier_group_map') ?: '{}', true) ?: [];
 					foreach ($tiers as $tid => $title)
 					{
 						if (!isset($existing_map[$tid]))
@@ -602,10 +607,10 @@ class acp_controller
 							$existing_map[$tid] = 0;
 						}
 					}
-					$this->config->set('patreon_tier_group_map', json_encode($existing_map));
+					$this->config_text->set('patreon_tier_group_map', json_encode($existing_map));
 
 					// Store tier labels for display
-					$this->config->set('patreon_tier_labels', json_encode($tiers));
+					$this->config_text->set('patreon_tier_labels', json_encode($tiers));
 
 					trigger_error($this->language->lang('ACP_BBPATREON_FETCH_TIERS_DONE', count($tiers)) . adm_back_link($this->u_action));
 				}

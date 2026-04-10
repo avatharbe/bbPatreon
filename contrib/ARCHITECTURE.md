@@ -114,12 +114,19 @@ patreon_creator_access_token
 patreon_creator_refresh_token
 patreon_campaign_id
 patreon_webhook_secret
-patreon_tier_group_map        -- JSON: {"tier_id_1": group_id, "tier_id_2": group_id}
-patreon_tier_labels           -- JSON: {"tier_id_1": "Tier Name", ...} (cached from API)
 patreon_grace_period_days     -- days before demotion after pledge:delete (default: 0)
 patreon_last_cron_sync        -- unix timestamp of last cron run
 auth_oauth_patreon_key        -- synced copy of patreon_client_id (phpBB OAuth convention)
 auth_oauth_patreon_secret     -- synced copy of patreon_client_secret (phpBB OAuth convention)
+```
+
+### ACP Configuration (stored in phpbb_config_text)
+
+These values can exceed the 255-character limit of `phpbb_config.config_value`, so they use `config_text` instead:
+
+```
+patreon_tier_group_map        -- JSON: {"tier_id_1": group_id, "tier_id_2": group_id}
+patreon_tier_labels           -- JSON: {"tier_id_1": "Tier Name", ...} (cached from API)
 ```
 
 ---
@@ -209,10 +216,12 @@ ext/avathar/bbpatreon/
 │                                        # shows username and tier
 │
 ├── migrations/
-│   └── v1_0_0_initial.php              # Creates phpbb_patreon_sync table
-│                                        # Adds all config keys
-│                                        # Registers ACP module (under ACP_CAT_DOT_MODS)
-│                                        # Registers UCP module
+│   ├── v1_0_0_initial.php              # Creates phpbb_patreon_sync table
+│   │                                    # Adds all config keys
+│   │                                    # Registers ACP module (under ACP_CAT_DOT_MODS)
+│   │                                    # Registers UCP module
+│   └── v1_0_1_config_text.php          # Moves tier_group_map and tier_labels
+│                                        # from config to config_text (fixes #6)
 │
 ├── acp/
 │   ├── main_info.php                    # ACP module metadata (mode: settings)
