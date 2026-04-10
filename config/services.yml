@@ -3,14 +3,18 @@ imports:
 
 services:
 
-    # phpBB OAuth service for Patreon (ID must match phpBB convention)
-    auth.provider.oauth.service.patreon:
+    # phpBB OAuth service for Patreon
+    avathar.bbpatreon.auth.provider.oauth.service.patreon:
         class: avathar\bbpatreon\auth\provider\oauth\service\patreon
         arguments:
             - '@config'
             - '@request'
         tags:
             - { name: auth.provider.oauth.service }
+
+    # Alias required by phpBB's OAuth discovery (looks for auth.provider.oauth.service.*)
+    auth.provider.oauth.service.patreon:
+        alias: avathar.bbpatreon.auth.provider.oauth.service.patreon
 
     # Patreon API v2 client
     avathar.bbpatreon.service.api_client:

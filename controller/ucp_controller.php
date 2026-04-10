@@ -128,8 +128,8 @@ class ucp_controller
 		}
 
 		// Check if account is linked
-		$sql = 'SELECT oauth_provider_id FROM ' . $this->oauth_accounts_table . "
-			WHERE user_id = " . $user_id . "
+		$sql = 'SELECT oauth_provider_id FROM ' . $this->oauth_accounts_table . '
+			WHERE user_id = ' . (int) $user_id . "
 				AND provider = 'patreon'";
 		$result = $this->db->sql_query($sql);
 		$oauth_row = $this->db->sql_fetchrow($result);
