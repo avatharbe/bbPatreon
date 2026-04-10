@@ -216,12 +216,10 @@ ext/avathar/bbpatreon/
 │                                        # shows username and tier
 │
 ├── migrations/
-│   ├── v1_0_0_initial.php              # Creates phpbb_patreon_sync table
-│   │                                    # Adds all config keys
-│   │                                    # Registers ACP module (under ACP_CAT_DOT_MODS)
-│   │                                    # Registers UCP module
-│   └── v1_0_1_config_text.php          # Moves tier_group_map and tier_labels
-│                                        # from config to config_text (fixes #6)
+│   └── v1_0_0_initial.php              # Creates phpbb_patreon_sync table
+│                                        # Adds config and config_text keys
+│                                        # Registers ACP module (under ACP_CAT_DOT_MODS)
+│                                        # Registers UCP module
 │
 ├── acp/
 │   ├── main_info.php                    # ACP module metadata (mode: settings)

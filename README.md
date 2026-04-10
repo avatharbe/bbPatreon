@@ -5,7 +5,7 @@ Patreon integration for phpBB — link patron accounts via OAuth and automatical
 Developed and maintained by [Avathar.be](https://www.avathar.be).
 
 #### Version
-1.0.0-dev
+1.0.0
 
 [![Tests](https://github.com/avatharbe/bbpatreon/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/avatharbe/bbpatreon/actions/workflows/tests.yml)
 
@@ -37,11 +37,12 @@ Developed and maintained by [Avathar.be](https://www.avathar.be).
 - Dutch, English, French, German, Portuguese, Spanish
 
 ### Changelog
-- 1.0.0-dev
+- 1.0.0
   - Initial release
   - OAuth 2.0 account linking via custom PHPoAuthLib service (works with `auth_method = db`)
   - Patreon API v2 client with creator token auto-refresh
   - Tier-to-group mapper with grace period support
+  - Tier labels and tier-group map stored in config_text (no 255-char limit)
   - Webhook receiver with HMAC-MD5 signature validation
   - Nightly cron reconciliation task
   - ACP: API credentials, webhook management, tier mapping, linked users table
