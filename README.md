@@ -18,18 +18,31 @@ Developed and maintained by [Avathar.be](https://www.avathar.be).
 - PHP curl extension
 
 #### Features
+
+**Account linking**
 - Users link their Patreon account from the UCP via OAuth 2.0
+- Unlink from UCP with immediate group demotion
+
+**Tier-based group sync**
 - Automatic phpBB group assignment based on Patreon pledge tier
 - Tier-to-group mapping configured in the ACP with "Fetch Tiers" button (no manual ID lookup)
+- Grace period option: delay group removal after a patron cancels or payment fails
+
+**Real-time and scheduled sync**
 - Real-time sync via Patreon webhooks (pledge create, update, delete)
 - Nightly cron task for full reconciliation against the Patreon members API
 - Manual "Sync Now" button in the ACP for on-demand reconciliation
-- Grace period option: delay group removal after a patron cancels or payment fails
+- "Refresh my status" button in UCP so users can trigger an immediate re-sync (rate-limited to once per 5 minutes)
+
+**UCP patron dashboard**
+- Tier name, pledge status (color-coded), pledge amount, assigned forum group, and last sync time
+- Human-readable status labels (Active Patron, Payment Declined, Former Patron, Pending)
+
+**Administration**
 - "Fetch Campaign ID" button in the ACP (auto-detects from the API)
 - Webhook management: register via API or manually via the Patreon portal, with "Check Status" and "Test Ping" buttons
 - Notification to admins and moderators when a user links their Patreon account
 - Linked users overview in the ACP showing tier, status, pledge amount, and sync timestamps
-- Unlink from UCP with immediate group demotion
 - Creator access token auto-refresh on expiry
 - Collapsible help text throughout the ACP explaining how each section works
 
@@ -37,6 +50,10 @@ Developed and maintained by [Avathar.be](https://www.avathar.be).
 - Dutch, English, French, German, Portuguese, Spanish
 
 ### Changelog
+- 1.0.0-RC3
+  - UCP: "Refresh my status" re-sync button with 5-minute rate limit (#3)
+  - UCP: show assigned forum group name, human-readable status labels, last sync time (#3)
+  - UCP: color-coded pledge status (active/declined/former/pending) (#3)
 - 1.0.0
   - Initial release
   - OAuth 2.0 account linking via custom PHPoAuthLib service (works with `auth_method = db`)
