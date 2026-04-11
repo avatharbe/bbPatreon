@@ -118,22 +118,29 @@
 			<thead>
 				<tr>
 					<th>{{ lang('ACP_BBPATREON_TIER') }}</th>
+					<th>{{ lang('ACP_BBPATREON_PLEDGE') }}</th>
+					<th>{{ lang('ACP_BBPATREON_PATRONS') }}</th>
 					<th>{{ lang('ACP_BBPATREON_PHPBB_GROUP') }}</th>
 					<th>&nbsp;</th>
 				</tr>
 			</thead>
 			<tbody>
 				{% for row in tier_map %}
-				<tr class="tier-map-row">
+				<tr class="tier-map-row{% if not row.PUBLISHED %} tier-unpublished{% endif %}">
 					<td>
 						{% if row.TIER_LABEL %}
-							<strong>{{ row.TIER_LABEL }}</strong><br>
+							<strong>{{ row.TIER_LABEL }}</strong>
+							{% if not row.PUBLISHED %}<span class="small" style="color:#999;"> ({{ lang('ACP_BBPATREON_UNPUBLISHED') }})</span>{% endif %}
+							<br>
 							<span class="small">ID: {{ row.TIER_ID }}</span>
+							{% if row.DESCRIPTION %}<br><span class="small" style="color:#666;">{{ row.DESCRIPTION|striptags }}</span>{% endif %}
 						{% else %}
 							{{ row.TIER_ID }}
 						{% endif %}
 						<input type="hidden" name="tier_ids[]" value="{{ row.TIER_ID }}">
 					</td>
+					<td>{{ row.AMOUNT }}</td>
+					<td>{{ row.PATRON_COUNT }}</td>
 					<td>
 						<select name="group_ids[]">
 							<option value="0">{{ lang('ACP_BBPATREON_SELECT_GROUP') }}</option>

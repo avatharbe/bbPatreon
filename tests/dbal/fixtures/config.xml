@@ -64,9 +64,12 @@
 	<table name="phpbb_patreon_tiers">
 		<column>tier_id</column>
 		<column>tier_label</column>
+		<column>description</column>
 		<column>group_id</column>
 		<column>amount_cents</column>
 		<column>currency</column>
+		<column>patron_count</column>
+		<column>published</column>
 	</table>
 
 	<table name="phpbb_patreon_sync">

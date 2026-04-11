@@ -129,7 +129,7 @@ class acp_controller
 		$groups = $this->get_phpbb_groups();
 
 		// Load tiers from database
-		$sql = 'SELECT tier_id, tier_label, group_id FROM ' . $this->patreon_tiers_table . ' ORDER BY tier_label ASC';
+		$sql = 'SELECT tier_id, tier_label, description, group_id, amount_cents, patron_count, published FROM ' . $this->patreon_tiers_table . ' ORDER BY amount_cents ASC';
 		$result = $this->db->sql_query($sql);
 		$tiers = [];
 		while ($row = $this->db->sql_fetchrow($result))
@@ -160,7 +160,11 @@ class acp_controller
 			$this->template->assign_block_vars('tier_map', [
 				'TIER_ID'		=> $tier['tier_id'],
 				'TIER_LABEL'	=> $tier['tier_label'],
+				'DESCRIPTION'	=> $tier['description'],
 				'GROUP_ID'		=> (int) $tier['group_id'],
+				'AMOUNT'		=> $this->format_currency((int) $tier['amount_cents']),
+				'PATRON_COUNT'	=> (int) $tier['patron_count'],
+				'PUBLISHED'		=> (bool) $tier['published'],
 			]);
 		}
 
@@ -609,7 +613,7 @@ class acp_controller
 			}
 			else
 			{
-				$result = $this->api_client->request('campaigns/' . $campaign_id . '?include=tiers&fields[tier]=title,amount_cents');
+				$result = $this->api_client->request('campaigns/' . $campaign_id . '?include=tiers&fields[tier]=title,description,amount_cents,patron_count,published');
 				$tiers = [];
 				if (isset($result['included']))
 				{
@@ -619,7 +623,10 @@ class acp_controller
 						{
 							$tiers[$resource['id']] = [
 								'title'			=> $resource['attributes']['title'] ?? '',
+								'description'	=> $resource['attributes']['description'] ?? '',
 								'amount_cents'	=> (int) ($resource['attributes']['amount_cents'] ?? 0),
+								'patron_count'	=> (int) ($resource['attributes']['patron_count'] ?? 0),
+								'published'		=> !empty($resource['attributes']['published']) ? 1 : 0,
 							];
 						}
 					}
@@ -644,12 +651,15 @@ class acp_controller
 
 						if ($exists)
 						{
-							// Update label and amount, preserve group_id
+							// Update metadata, preserve group_id
 							$sql = 'UPDATE ' . $this->patreon_tiers_table . '
 								SET ' . $this->db->sql_build_array('UPDATE', [
 									'tier_label'	=> $tier_data['title'],
+									'description'	=> $tier_data['description'],
 									'amount_cents'	=> $tier_data['amount_cents'],
 									'currency'		=> $currency,
+									'patron_count'	=> $tier_data['patron_count'],
+									'published'		=> $tier_data['published'],
 								]) . "
 								WHERE tier_id = '" . $this->db->sql_escape($tid) . "'";
 						}
@@ -658,9 +668,12 @@ class acp_controller
 							$sql = 'INSERT INTO ' . $this->patreon_tiers_table . ' ' . $this->db->sql_build_array('INSERT', [
 								'tier_id'		=> $tid,
 								'tier_label'	=> $tier_data['title'],
+								'description'	=> $tier_data['description'],
 								'group_id'		=> 0,
 								'amount_cents'	=> $tier_data['amount_cents'],
 								'currency'		=> $currency,
+								'patron_count'	=> $tier_data['patron_count'],
+								'published'		=> $tier_data['published'],
 							]);
 						}
 						$this->db->sql_query($sql);

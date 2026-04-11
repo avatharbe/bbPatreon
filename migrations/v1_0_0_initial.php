@@ -40,10 +40,13 @@ class v1_0_0_initial extends \phpbb\db\migration\migration
 				$this->table_prefix . 'patreon_tiers' => [
 					'COLUMNS' => [
 						'tier_id'		=> ['VCHAR:64', ''],
-						'tier_label'	=> ['TEXT', ''],
+						'tier_label'	=> ['VCHAR:255', ''],
+						'description'	=> ['TEXT', ''],
 						'group_id'		=> ['UINT', 0],
 						'amount_cents'	=> ['UINT', 0],
 						'currency'		=> ['VCHAR:3', ''],
+						'patron_count'	=> ['UINT', 0],
+						'published'		=> ['BOOL', 1],
 					],
 					'PRIMARY_KEY' => 'tier_id',
 				],

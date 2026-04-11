@@ -63,14 +63,14 @@ class migration_test extends \phpbb_database_test_case
 
 	/**
 	 * The patreon_tiers table must support inserting and reading back
-	 * tier rows with TEXT labels (emoji, long names).
+	 * tier rows with all columns including description, patron_count, and published.
 	 */
 	public function test_patreon_tiers_table_stores_tiers()
 	{
 		$tiers = array(
-			array('tier_id' => '10425190', 'tier_label' => 'Free', 'group_id' => 0, 'amount_cents' => 0, 'currency' => 'USD'),
-			array('tier_id' => '3116836', 'tier_label' => "Suck Less Thumbs Up \xF0\x9F\x91\x8D", 'group_id' => 5, 'amount_cents' => 500, 'currency' => 'USD'),
-			array('tier_id' => '9553953', 'tier_label' => "4 is the smallest COMPOSITE number \xF0\x9F\x98\x81", 'group_id' => 6, 'amount_cents' => 2000, 'currency' => 'EUR'),
+			array('tier_id' => '10425190', 'tier_label' => 'Free', 'description' => 'Free tier for everyone', 'group_id' => 0, 'amount_cents' => 0, 'currency' => 'USD', 'patron_count' => 42, 'published' => 1),
+			array('tier_id' => '3116836', 'tier_label' => "Suck Less Thumbs Up \xF0\x9F\x91\x8D", 'description' => '<p>Premium <strong>tier</strong></p>', 'group_id' => 5, 'amount_cents' => 500, 'currency' => 'USD', 'patron_count' => 15, 'published' => 1),
+			array('tier_id' => '9553953', 'tier_label' => "COMPOSITE tier \xF0\x9F\x98\x81", 'description' => '', 'group_id' => 6, 'amount_cents' => 2000, 'currency' => 'EUR', 'patron_count' => 0, 'published' => 0),
 		);
 
 		foreach ($tiers as $tier)
@@ -79,7 +79,7 @@ class migration_test extends \phpbb_database_test_case
 			$this->db->sql_query($sql);
 		}
 
-		$sql = 'SELECT tier_id, tier_label, group_id, amount_cents, currency FROM phpbb_patreon_tiers ORDER BY tier_id';
+		$sql = 'SELECT * FROM phpbb_patreon_tiers ORDER BY tier_id';
 		$result = $this->db->sql_query($sql);
 		$rows = array();
 		while ($row = $this->db->sql_fetchrow($result))
@@ -90,34 +90,41 @@ class migration_test extends \phpbb_database_test_case
 
 		$this->assertCount(3, $rows, 'All 3 tiers must be stored');
 		$this->assertEquals('Free', $rows[0]['tier_label']);
+		$this->assertEquals('Free tier for everyone', $rows[0]['description']);
+		$this->assertEquals(42, (int) $rows[0]['patron_count']);
+		$this->assertEquals(1, (int) $rows[0]['published']);
 		$this->assertStringContainsString("\xF0\x9F\x91\x8D", $rows[1]['tier_label'], 'Emoji must survive round-trip');
 		$this->assertEquals(5, (int) $rows[1]['group_id']);
 		$this->assertEquals(2000, (int) $rows[2]['amount_cents']);
 		$this->assertEquals('EUR', $rows[2]['currency']);
+		$this->assertEquals(0, (int) $rows[2]['published']);
 	}
 
 	/**
-	 * Verify that tier_label as TEXT can store values exceeding 255 characters.
+	 * Verify that description as TEXT can store values exceeding 255 characters.
 	 */
-	public function test_patreon_tiers_table_stores_long_labels()
+	public function test_patreon_tiers_table_stores_long_descriptions()
 	{
-		$long_label = str_repeat("Very Long Tier Name \xF0\x9F\x98\x81 ", 20);
-		$this->assertGreaterThan(255, strlen($long_label));
+		$long_desc = str_repeat("Very long tier description with <strong>HTML</strong> content. ", 20);
+		$this->assertGreaterThan(255, strlen($long_desc));
 
 		$sql = 'INSERT INTO phpbb_patreon_tiers ' . $this->db->sql_build_array('INSERT', array(
-			'tier_id'		=> 'long-label-test',
-			'tier_label'	=> $long_label,
+			'tier_id'		=> 'long-desc-test',
+			'tier_label'	=> 'Test Tier',
+			'description'	=> $long_desc,
 			'group_id'		=> 0,
 			'amount_cents'	=> 0,
 			'currency'		=> 'USD',
+			'patron_count'	=> 0,
+			'published'		=> 1,
 		));
 		$this->db->sql_query($sql);
 
-		$sql = "SELECT tier_label FROM phpbb_patreon_tiers WHERE tier_id = 'long-label-test'";
+		$sql = "SELECT description FROM phpbb_patreon_tiers WHERE tier_id = 'long-desc-test'";
 		$result = $this->db->sql_query($sql);
 		$row = $this->db->sql_fetchrow($result);
 		$this->db->sql_freeresult($result);
 
-		$this->assertEquals($long_label, $row['tier_label'], 'TEXT column must store labels exceeding 255 chars without truncation');
+		$this->assertEquals($long_desc, $row['description'], 'TEXT column must store descriptions exceeding 255 chars without truncation');
 	}
 }
