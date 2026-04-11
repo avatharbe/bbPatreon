@@ -23,6 +23,12 @@ $lang = array_merge($lang, [
 
 	'PATREON_NEVER'	=> 'Nie',
 
+	'PATREON_SUPPORTERS_TITLE'		=> 'Unsere Unterstützer',
+	'PATREON_SUPPORTERS_EXPLAIN'	=> 'Diese Community-Mitglieder unterstützen uns über Patreon.',
+	'PATREON_SUPPORTERS_TIER'		=> 'Stufe',
+	'PATREON_SUPPORTERS_PLEDGE'		=> 'Pledge',
+	'PATREON_SUPPORTERS_NONE'		=> 'Derzeit keine Unterstützer anzuzeigen.',
+
 	'NOTIFICATION_TYPE_PATREON_LINKED'			=> 'Jemand verknüpft sein Patreon-Konto',
 	'NOTIFICATION_PATREON_LINKED'				=> '<strong>%s</strong> hat sein Patreon-Konto verknüpft',
 	'NOTIFICATION_PATREON_LINKED_REFERENCE'		=> 'Stufe: %s',

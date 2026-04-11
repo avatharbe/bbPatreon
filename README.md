@@ -51,9 +51,15 @@ Developed and maintained by [Avathar.be](https://www.avathar.be).
 
 ### Changelog
 - 1.0.0-RC3
+  - Public supporters page at `/patreon/supporters` with opt-in privacy controls (#2)
+  - ACP master switch to enable/disable supporters page (#2)
+  - UCP opt-in checkbox: "Show me as a supporter" with per-user consent (#2)
+  - New migration for `show_public` column and `patreon_supporters_page_enabled` config (#2)
   - UCP: "Refresh my status" re-sync button with 5-minute rate limit (#3)
   - UCP: show assigned forum group name, human-readable status labels, last sync time (#3)
   - UCP: color-coded pledge status (active/declined/former/pending) (#3)
+  - Unit test suite: 76 tests, 170 assertions covering services, controllers, cron, migrations, auth, and OAuth
+  - CI: PHPUnit 9.x on PHP 8.1-8.4 with MySQL, PostgreSQL, and Windows
 - 1.0.0-dev
   - Initial release
   - OAuth 2.0 account linking via custom PHPoAuthLib service (works with `auth_method = db`)

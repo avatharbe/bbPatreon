@@ -25,6 +25,13 @@ $lang = array_merge($lang, [
 	// General
 	'PATREON_NEVER'	=> 'Never',
 
+	// Supporters page
+	'PATREON_SUPPORTERS_TITLE'		=> 'Our Supporters',
+	'PATREON_SUPPORTERS_EXPLAIN'	=> 'These community members support us through Patreon.',
+	'PATREON_SUPPORTERS_TIER'		=> 'Tier',
+	'PATREON_SUPPORTERS_PLEDGE'		=> 'Pledge',
+	'PATREON_SUPPORTERS_NONE'		=> 'No supporters to display at this time.',
+
 	// Notifications
 	'NOTIFICATION_TYPE_PATREON_LINKED'			=> 'Someone links their Patreon account',
 	'NOTIFICATION_PATREON_LINKED'				=> '<strong>%s</strong> linked their Patreon account',

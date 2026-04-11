@@ -1,0 +1,44 @@
+{% include 'overall_header.html' %}
+
+<h2>{{ lang('PATREON_SUPPORTERS_TITLE') }}</h2>
+
+<div class="panel">
+	<div class="inner">
+	{% if S_HAS_SUPPORTERS %}
+		<p>{{ lang('PATREON_SUPPORTERS_EXPLAIN') }}</p>
+
+		<div class="forumbg">
+			<table class="table1" style="margin-bottom: 0;">
+				<thead>
+					<tr>
+						<th class="name">{{ lang('USERNAME') }}</th>
+						<th class="name">{{ lang('RANK') }}</th>
+						<th class="name">{{ lang('GROUP') }}</th>
+						<th class="name">{{ lang('PATREON_SUPPORTERS_TIER') }}</th>
+						{% if S_SHOW_AMOUNTS %}<th class="name">{{ lang('PATREON_SUPPORTERS_PLEDGE') }}</th>{% endif %}
+					</tr>
+				</thead>
+				<tbody>
+					{% for supporter in supporters %}
+					<tr class="{{ loop.index is odd ? 'bg1' : 'bg2' }}">
+						<td>{% if supporter.AVATAR %}<span class="avatar-inline">{{ supporter.AVATAR | raw }}</span> {% endif %}{{ supporter.USERNAME | raw }}</td>
+						<td>{{ supporter.RANK_TITLE }}</td>
+						<td>{{ supporter.GROUP_NAME }}</td>
+						<td>{{ supporter.TIER_LABEL }}</td>
+						{% if S_SHOW_AMOUNTS %}<td>{{ supporter.PLEDGE_AMOUNT }}</td>{% endif %}
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	{% else %}
+		<p>{{ lang('PATREON_SUPPORTERS_NONE') }}</p>
+	{% endif %}
+	</div>
+</div>
+
+<style>
+.avatar-inline img { width: 32px; height: 32px; vertical-align: middle; border-radius: 3px; margin-right: 4px; }
+</style>
+
+{% include 'overall_footer.html' %}

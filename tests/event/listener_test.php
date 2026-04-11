@@ -39,6 +39,9 @@ class listener_test extends \phpbb_test_case
 	/** @var \PHPUnit\Framework\MockObject\MockObject */
 	protected $group_mapper;
 
+	/** @var \PHPUnit\Framework\MockObject\MockObject */
+	protected $helper;
+
 	public function setUp(): void
 	{
 		parent::setUp();
@@ -54,6 +57,9 @@ class listener_test extends \phpbb_test_case
 		$this->group_mapper = $this->getMockBuilder('\avathar\bbpatreon\service\group_mapper')
 			->disableOriginalConstructor()
 			->getMock();
+		$this->helper = $this->getMockBuilder('\phpbb\controller\helper')
+			->disableOriginalConstructor()
+			->getMock();
 
 		$this->listener = new \avathar\bbpatreon\event\listener(
 			$this->config,
@@ -61,6 +67,7 @@ class listener_test extends \phpbb_test_case
 			$this->language,
 			$this->api_client,
 			$this->group_mapper,
+			$this->helper,
 			'phpbb_patreon_sync'
 		);
 	}
@@ -78,8 +85,9 @@ class listener_test extends \phpbb_test_case
 		$events = \avathar\bbpatreon\event\listener::getSubscribedEvents();
 
 		$this->assertArrayHasKey('core.user_setup', $events);
+		$this->assertArrayHasKey('core.page_header', $events);
 		$this->assertArrayHasKey('core.oauth_login_after_check_if_provider_id_has_match', $events);
-		$this->assertCount(2, $events);
+		$this->assertCount(3, $events);
 	}
 
 	/**

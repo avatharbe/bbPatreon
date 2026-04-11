@@ -91,6 +91,10 @@ $lang = array_merge($lang, [
 	'ACP_BBPATREON_ADD_TIER_MAP'			=> 'Añadir mapeo de nivel',
 	'ACP_BBPATREON_GRACE_PERIOD'			=> 'Período de gracia',
 	'ACP_BBPATREON_GRACE_PERIOD_EXPLAIN'	=> 'Días de espera antes de eliminar a un usuario de su grupo de mecenas. Pon 0 para eliminación inmediata.',
+	'ACP_BBPATREON_SUPPORTERS_PAGE'			=> 'Página pública de mecenas',
+	'ACP_BBPATREON_SUPPORTERS_PAGE_EXPLAIN'	=> 'Activa una página pública que muestra los usuarios que han elegido aparecer como mecenas.',
+	'ACP_BBPATREON_SUPPORTERS_SHOW_AMOUNTS'			=> 'Permitir importes en la página de mecenas',
+	'ACP_BBPATREON_SUPPORTERS_SHOW_AMOUNTS_EXPLAIN'	=> 'Si está activado, los mecenas pueden elegir mostrar su importe de pledge en la página pública. Cada usuario debe activarlo individualmente en el Panel de Control.',
 
 	'ACP_BBPATREON_LINKED_USERS'			=> 'Usuarios vinculados',
 	'ACP_BBPATREON_LINKED_USERS_EXPLAIN'	=> 'Usuarios del foro que han vinculado su cuenta de Patreon desde el Panel de Control de Usuario.',

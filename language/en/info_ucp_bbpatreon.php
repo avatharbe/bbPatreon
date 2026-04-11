@@ -43,6 +43,13 @@ $lang = array_merge($lang, [
 	'UCP_BBPATREON_RESYNCED'		=> 'Your Patreon status has been refreshed successfully.',
 	'UCP_BBPATREON_RESYNC_TOO_SOON'	=> 'You can only refresh your status once every 5 minutes. Please try again later.',
 
+	'UCP_BBPATREON_PREFERENCES'				=> 'Preferences',
+	'UCP_BBPATREON_SHOW_PUBLIC'				=> 'Show me as a supporter',
+	'UCP_BBPATREON_SHOW_PUBLIC_EXPLAIN'		=> 'If enabled, your username and tier name will appear on the public supporters page. Pledge amounts are never shown.',
+	'UCP_BBPATREON_SHOW_PLEDGE'				=> 'Show my pledge amount',
+	'UCP_BBPATREON_SHOW_PLEDGE_EXPLAIN'		=> 'If enabled, your pledge amount will be visible on the supporters page. Requires "Show me as a supporter" to be enabled.',
+	'UCP_BBPATREON_PREFERENCES_SAVED'		=> 'Your preferences have been saved.',
+
 	'UCP_BBPATREON_STATUS_ACTIVE_PATRON'	=> 'Active Patron',
 	'UCP_BBPATREON_STATUS_DECLINED_PATRON'	=> 'Payment Declined',
 	'UCP_BBPATREON_STATUS_FORMER_PATRON'	=> 'Former Patron',

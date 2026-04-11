@@ -95,6 +95,10 @@ $lang = array_merge($lang, [
 	'ACP_BBPATREON_ADD_TIER_MAP'			=> 'Add Tier Mapping',
 	'ACP_BBPATREON_GRACE_PERIOD'			=> 'Grace Period',
 	'ACP_BBPATREON_GRACE_PERIOD_EXPLAIN'	=> 'Number of days to wait before removing a user from their patron group after they cancel or their payment fails. During this period, the user keeps their group access. Set to 0 to remove group membership immediately. The nightly cron task enforces grace period expirations.',
+	'ACP_BBPATREON_SUPPORTERS_PAGE'			=> 'Public Supporters Page',
+	'ACP_BBPATREON_SUPPORTERS_PAGE_EXPLAIN'	=> 'Enable a public page listing users who have opted in to be shown as supporters. Users opt in via the UCP.',
+	'ACP_BBPATREON_SUPPORTERS_SHOW_AMOUNTS'			=> 'Allow pledge amounts on supporters page',
+	'ACP_BBPATREON_SUPPORTERS_SHOW_AMOUNTS_EXPLAIN'	=> 'When enabled, supporters can choose to display their pledge amount on the public page. Each user must individually opt in via the UCP.',
 
 	// Linked users
 	'ACP_BBPATREON_LINKED_USERS'			=> 'Linked Users',

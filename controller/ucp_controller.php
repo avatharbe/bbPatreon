@@ -155,6 +155,29 @@ class ucp_controller
 			list($errors, $sql, $is_linked, $patreon_user_id) = $this->HandleUnlinking($errors, $patreon_user_id, $user_id, $is_linked);
 		}
 
+		// Handle supporter opt-in preference
+		if ($this->request->is_set_post('save_preferences') && $is_linked)
+		{
+			if (!check_form_key('avathar_bbpatreon_ucp'))
+			{
+				$errors[] = $this->language->lang('FORM_INVALID');
+			}
+			else
+			{
+				$show_public = ($this->config['patreon_supporters_page_enabled'] && $this->request->variable('show_public', 0)) ? 1 : 0;
+				$show_pledge = ($this->config['patreon_supporters_show_amounts'] && $this->request->variable('show_pledge_public', 0)) ? 1 : 0;
+				$sql = 'UPDATE ' . $this->patreon_sync_table . '
+					SET show_public = ' . $show_public . ',
+						show_pledge_public = ' . $show_pledge . "
+					WHERE patreon_user_id = '" . $this->db->sql_escape($patreon_user_id) . "'";
+				$this->db->sql_query($sql);
+
+				meta_refresh(3, $this->u_action);
+				$message = $this->language->lang('UCP_BBPATREON_PREFERENCES_SAVED') . '<br><br>' . $this->language->lang('RETURN_UCP', '<a href="' . $this->u_action . '">', '</a>');
+				trigger_error($message);
+			}
+		}
+
 		// Get sync data if linked (join on patreon_tiers for label)
 		$sync_data = [];
 		if ($is_linked)
@@ -190,6 +213,10 @@ class ucp_controller
 			'PATREON_PLEDGE_AMOUNT'	=> isset($sync_data['pledge_cents']) && (int) $sync_data['pledge_cents'] > 0 ? $this->format_currency((int) $sync_data['pledge_cents']) : '',
 			'PATREON_GROUP_NAME'	=> $group_name,
 			'PATREON_LAST_SYNCED'	=> !empty($sync_data['last_synced_at']) ? $this->user->format_date((int) $sync_data['last_synced_at']) : '',
+			'S_SUPPORTERS_PAGE_ENABLED'		=> (bool) $this->config['patreon_supporters_page_enabled'],
+			'S_SHOW_PUBLIC'					=> !empty($sync_data['show_public']),
+			'S_SUPPORTERS_SHOW_AMOUNTS'		=> (bool) $this->config['patreon_supporters_show_amounts'],
+			'S_SHOW_PLEDGE_PUBLIC'			=> !empty($sync_data['show_pledge_public']),
 		]);
 	}
 

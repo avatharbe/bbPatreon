@@ -95,6 +95,10 @@ $lang = array_merge($lang, [
 	'ACP_BBPATREON_ADD_TIER_MAP'			=> 'Tier-koppeling toevoegen',
 	'ACP_BBPATREON_GRACE_PERIOD'			=> 'Gratieperiode',
 	'ACP_BBPATREON_GRACE_PERIOD_EXPLAIN'	=> 'Aantal dagen wachten voordat een gebruiker uit zijn patrongroep wordt verwijderd nadat hij opzegt of zijn betaling mislukt. Tijdens deze periode behoudt de gebruiker zijn groepstoegang. Stel in op 0 voor onmiddellijke verwijdering. De nachtelijke cron-taak handhaaft het verlopen van de gratieperiode.',
+	'ACP_BBPATREON_SUPPORTERS_PAGE'			=> 'Openbare supporterspagina',
+	'ACP_BBPATREON_SUPPORTERS_PAGE_EXPLAIN'	=> 'Schakel een openbare pagina in met gebruikers die ervoor gekozen hebben om als supporter getoond te worden.',
+	'ACP_BBPATREON_SUPPORTERS_SHOW_AMOUNTS'			=> 'Pledgebedragen op supporterspagina toestaan',
+	'ACP_BBPATREON_SUPPORTERS_SHOW_AMOUNTS_EXPLAIN'	=> 'Indien ingeschakeld kunnen supporters hun pledgebedrag op de openbare pagina tonen. Elke gebruiker moet dit individueel in het UCP inschakelen.',
 
 	// Linked users
 	'ACP_BBPATREON_LINKED_USERS'			=> 'Gekoppelde gebruikers',

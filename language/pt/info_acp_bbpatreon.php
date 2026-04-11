@@ -91,6 +91,10 @@ $lang = array_merge($lang, [
 	'ACP_BBPATREON_ADD_TIER_MAP'			=> 'Adicionar mapeamento de nível',
 	'ACP_BBPATREON_GRACE_PERIOD'			=> 'Período de graça',
 	'ACP_BBPATREON_GRACE_PERIOD_EXPLAIN'	=> 'Dias de espera antes de remover um utilizador do seu grupo de patrono. Defina como 0 para remoção imediata.',
+	'ACP_BBPATREON_SUPPORTERS_PAGE'			=> 'Página pública de apoiantes',
+	'ACP_BBPATREON_SUPPORTERS_PAGE_EXPLAIN'	=> 'Ativa uma página pública que mostra os utilizadores que optaram por aparecer como apoiantes.',
+	'ACP_BBPATREON_SUPPORTERS_SHOW_AMOUNTS'			=> 'Permitir montantes na página de apoiantes',
+	'ACP_BBPATREON_SUPPORTERS_SHOW_AMOUNTS_EXPLAIN'	=> 'Se ativado, os apoiantes podem optar por mostrar o seu montante de pledge na página pública. Cada utilizador deve ativá-lo individualmente no Painel de Controlo.',
 
 	'ACP_BBPATREON_LINKED_USERS'			=> 'Utilizadores vinculados',
 	'ACP_BBPATREON_LINKED_USERS_EXPLAIN'	=> 'Utilizadores do fórum que vincularam a sua conta Patreon via Painel de Controlo do Utilizador.',

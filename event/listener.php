@@ -30,6 +30,9 @@ class listener implements EventSubscriberInterface
 	/** @var \avathar\bbpatreon\service\group_mapper */
 	protected $group_mapper;
 
+	/** @var \phpbb\controller\helper */
+	protected $helper;
+
 	/** @var string */
 	protected $patreon_sync_table;
 
@@ -42,6 +45,7 @@ class listener implements EventSubscriberInterface
 		\phpbb\language\language $language,
 		\avathar\bbpatreon\service\api_client $api_client,
 		\avathar\bbpatreon\service\group_mapper $group_mapper,
+		\phpbb\controller\helper $helper,
 		string $patreon_sync_table
 	)
 	{
@@ -50,6 +54,7 @@ class listener implements EventSubscriberInterface
 		$this->language				= $language;
 		$this->api_client			= $api_client;
 		$this->group_mapper			= $group_mapper;
+		$this->helper				= $helper;
 		$this->patreon_sync_table	= $patreon_sync_table;
 	}
 
@@ -60,6 +65,7 @@ class listener implements EventSubscriberInterface
 	{
 		return [
 			'core.user_setup'	=> 'load_language_on_setup',
+			'core.page_header'	=> 'add_page_header_links',
 			'core.oauth_login_after_check_if_provider_id_has_match'	=> 'on_oauth_login',
 		];
 	}
@@ -75,6 +81,34 @@ class listener implements EventSubscriberInterface
 			'lang_set' => 'common',
 		];
 		$event['lang_set_ext'] = $lang_set_ext;
+	}
+
+	/**
+	 * Add supporters page link to the page header when enabled.
+	 */
+	public function add_page_header_links()
+	{
+		if (!empty($this->config['patreon_supporters_page_enabled']))
+		{
+			$this->language->add_lang('common', 'avathar/bbpatreon');
+
+			$this->db->sql_return_on_error(true);
+			$sql = 'SELECT COUNT(*) as cnt FROM ' . $this->patreon_sync_table . "
+				WHERE show_public = 1 AND pledge_status = 'active_patron'";
+			$result = $this->db->sql_query($sql);
+			$row = $this->db->sql_fetchrow($result);
+			$this->db->sql_freeresult($result);
+			$this->db->sql_return_on_error(false);
+
+			$count = $row ? (int) $row['cnt'] : 0;
+
+			global $template;
+			$template->assign_vars([
+				'U_PATREON_SUPPORTERS'		=> $this->helper->route('avathar_bbpatreon_supporters'),
+				'S_PATREON_SUPPORTERS'		=> true,
+				'PATREON_SUPPORTERS_COUNT'	=> $count,
+			]);
+		}
 	}
 
 	/**

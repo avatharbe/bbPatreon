@@ -91,6 +91,10 @@ $lang = array_merge($lang, [
 	'ACP_BBPATREON_ADD_TIER_MAP'			=> 'Stufen-Zuordnung hinzufügen',
 	'ACP_BBPATREON_GRACE_PERIOD'			=> 'Gnadenfrist',
 	'ACP_BBPATREON_GRACE_PERIOD_EXPLAIN'	=> 'Anzahl der Tage, die gewartet wird, bevor ein Benutzer aus seiner Patrongruppe entfernt wird. Auf 0 setzen für sofortige Entfernung.',
+	'ACP_BBPATREON_SUPPORTERS_PAGE'			=> 'Öffentliche Unterstützerseite',
+	'ACP_BBPATREON_SUPPORTERS_PAGE_EXPLAIN'	=> 'Aktiviert eine öffentliche Seite mit Benutzern, die sich als Unterstützer zeigen möchten.',
+	'ACP_BBPATREON_SUPPORTERS_SHOW_AMOUNTS'			=> 'Pledge-Beträge auf Unterstützerseite erlauben',
+	'ACP_BBPATREON_SUPPORTERS_SHOW_AMOUNTS_EXPLAIN'	=> 'Wenn aktiviert, können Unterstützer ihren Pledge-Betrag auf der öffentlichen Seite anzeigen. Jeder Benutzer muss dies individuell im UCP aktivieren.',
 
 	'ACP_BBPATREON_LINKED_USERS'			=> 'Verknüpfte Benutzer',
 	'ACP_BBPATREON_LINKED_USERS_EXPLAIN'	=> 'Forenbenutzer, die ihr Patreon-Konto über das Benutzerkontrollzentrum verknüpft haben.',

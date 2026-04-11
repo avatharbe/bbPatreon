@@ -151,6 +151,8 @@ class acp_controller
 			'PATREON_CAMPAIGN_ID'			=> $this->config['patreon_campaign_id'],
 			'PATREON_WEBHOOK_SECRET'		=> $this->config['patreon_webhook_secret'],
 			'PATREON_GRACE_PERIOD_DAYS'		=> (int) $this->config['patreon_grace_period_days'],
+			'PATREON_SUPPORTERS_PAGE_ENABLED'	=> (int) $this->config['patreon_supporters_page_enabled'],
+			'PATREON_SUPPORTERS_SHOW_AMOUNTS'	=> (int) $this->config['patreon_supporters_show_amounts'],
 			'PATREON_LAST_SYNC'				=> $this->config['patreon_last_cron_sync'] ? $this->user->format_date((int) $this->config['patreon_last_cron_sync']) : $this->language->lang('PATREON_NEVER'),
 		]);
 
@@ -181,7 +183,7 @@ class acp_controller
 		foreach ($linked_users as $lu)
 		{
 			$this->template->assign_block_vars('linked_users', [
-				'USERNAME'			=> $lu['username'],
+				'USERNAME'			=> get_username_string('full', $lu['user_id'], $lu['username'], $lu['user_colour']),
 				'PATREON_USER_ID'	=> $lu['patreon_user_id'],
 				'TIER_LABEL'		=> $lu['tier_label'],
 				'PLEDGE_STATUS'		=> $lu['pledge_status'],
@@ -208,6 +210,8 @@ class acp_controller
 		$this->config->set('patreon_campaign_id', $this->request->variable('patreon_campaign_id', ''));
 		$this->config->set('patreon_webhook_secret', $this->request->variable('patreon_webhook_secret', ''));
 		$this->config->set('patreon_grace_period_days', $this->request->variable('patreon_grace_period_days', 0));
+		$this->config->set('patreon_supporters_page_enabled', $this->request->variable('patreon_supporters_page_enabled', 0));
+		$this->config->set('patreon_supporters_show_amounts', $this->request->variable('patreon_supporters_show_amounts', 0));
 
 		// Sync phpBB OAuth convention keys
 		$this->config->set('auth_oauth_patreon_key', $client_id);
@@ -414,7 +418,8 @@ class acp_controller
 
 	protected function get_linked_users(): array
 	{
-		$sql = 'SELECT u.username, oa.oauth_provider_id as patreon_user_id,
+		$sql = 'SELECT u.user_id, u.username, u.user_colour,
+				oa.oauth_provider_id as patreon_user_id,
 				pt.tier_label, ps.pledge_status, ps.pledge_cents,
 				ps.last_webhook_at, ps.last_synced_at
 			FROM ' . $this->oauth_accounts_table . ' oa
@@ -429,7 +434,9 @@ class acp_controller
 		while ($row = $this->db->sql_fetchrow($result))
 		{
 			$users[] = [
+				'user_id'			=> (int) $row['user_id'],
 				'username'			=> $row['username'],
+				'user_colour'		=> $row['user_colour'],
 				'patreon_user_id'	=> $row['patreon_user_id'],
 				'tier_label'		=> $row['tier_label'] ?? '',
 				'pledge_status'		=> $row['pledge_status'] ?? '',

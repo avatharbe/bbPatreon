@@ -91,6 +91,10 @@ $lang = array_merge($lang, [
 	'ACP_BBPATREON_ADD_TIER_MAP'			=> 'Ajouter une correspondance',
 	'ACP_BBPATREON_GRACE_PERIOD'			=> 'Période de grâce',
 	'ACP_BBPATREON_GRACE_PERIOD_EXPLAIN'	=> 'Nombre de jours d\'attente avant de retirer un utilisateur de son groupe patron. Mettre à 0 pour un retrait immédiat.',
+	'ACP_BBPATREON_SUPPORTERS_PAGE'			=> 'Page publique des supporters',
+	'ACP_BBPATREON_SUPPORTERS_PAGE_EXPLAIN'	=> 'Active une page publique listant les utilisateurs ayant choisi d\'apparaître comme supporters.',
+	'ACP_BBPATREON_SUPPORTERS_SHOW_AMOUNTS'			=> 'Autoriser les montants sur la page des supporters',
+	'ACP_BBPATREON_SUPPORTERS_SHOW_AMOUNTS_EXPLAIN'	=> 'Si activé, les supporters peuvent choisir d\'afficher leur montant de pledge sur la page publique. Chaque utilisateur doit l\'activer individuellement dans le PCU.',
 
 	'ACP_BBPATREON_LINKED_USERS'			=> 'Utilisateurs liés',
 	'ACP_BBPATREON_LINKED_USERS_EXPLAIN'	=> 'Utilisateurs du forum ayant lié leur compte Patreon via le Panneau de l\'utilisateur.',

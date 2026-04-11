@@ -57,6 +57,34 @@
 	</div>
 </div>
 
+{% if S_SUPPORTERS_PAGE_ENABLED %}
+<div class="panel">
+	<div class="inner">
+	<fieldset>
+		<legend>{{ lang('UCP_BBPATREON_PREFERENCES') }}</legend>
+		<form method="post" action="{{ U_UCP_ACTION }}">
+			<dl>
+				<dt><label for="show_public">{{ lang('UCP_BBPATREON_SHOW_PUBLIC') }}{{ lang('COLON') }}</label><br>
+					<span>{{ lang('UCP_BBPATREON_SHOW_PUBLIC_EXPLAIN') }}</span></dt>
+				<dd><label><input type="checkbox" id="show_public" name="show_public" value="1"{% if S_SHOW_PUBLIC %} checked="checked"{% endif %}> {{ lang('YES') }}</label></dd>
+			</dl>
+			{% if S_SUPPORTERS_SHOW_AMOUNTS %}
+			<dl>
+				<dt><label for="show_pledge_public">{{ lang('UCP_BBPATREON_SHOW_PLEDGE') }}{{ lang('COLON') }}</label><br>
+					<span>{{ lang('UCP_BBPATREON_SHOW_PLEDGE_EXPLAIN') }}</span></dt>
+				<dd><label><input type="checkbox" id="show_pledge_public" name="show_pledge_public" value="1"{% if S_SHOW_PLEDGE_PUBLIC %} checked="checked"{% endif %}> {{ lang('YES') }}</label></dd>
+			</dl>
+			{% endif %}
+			<fieldset class="submit-buttons">
+				<input class="button2" type="submit" name="save_preferences" value="{{ lang('SUBMIT') }}">
+				{{ S_FORM_TOKEN }}
+			</fieldset>
+		</form>
+	</fieldset>
+	</div>
+</div>
+{% endif %}
+
 <form method="post" action="{{ U_UCP_ACTION }}">
 	<fieldset class="submit-buttons">
 		<input class="button1" type="submit" name="resync" value="{{ lang('UCP_BBPATREON_RESYNC') }}">

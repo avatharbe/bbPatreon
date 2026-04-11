@@ -160,6 +160,18 @@
 				<span>{{ lang('ACP_BBPATREON_GRACE_PERIOD_EXPLAIN') }}</span></dt>
 			<dd><input type="number" id="patreon_grace_period_days" name="patreon_grace_period_days" value="{{ PATREON_GRACE_PERIOD_DAYS }}" min="0" size="5"> {{ lang('DAYS') }}</dd>
 		</dl>
+
+		<dl>
+			<dt><label for="patreon_supporters_page_enabled">{{ lang('ACP_BBPATREON_SUPPORTERS_PAGE') ~ lang('COLON') }}</label><br>
+				<span>{{ lang('ACP_BBPATREON_SUPPORTERS_PAGE_EXPLAIN') }}</span></dt>
+			<dd><label><input type="checkbox" id="patreon_supporters_page_enabled" name="patreon_supporters_page_enabled" value="1"{% if PATREON_SUPPORTERS_PAGE_ENABLED %} checked="checked"{% endif %}> {{ lang('ENABLED') }}</label></dd>
+		</dl>
+
+		<dl>
+			<dt><label for="patreon_supporters_show_amounts">{{ lang('ACP_BBPATREON_SUPPORTERS_SHOW_AMOUNTS') ~ lang('COLON') }}</label><br>
+				<span>{{ lang('ACP_BBPATREON_SUPPORTERS_SHOW_AMOUNTS_EXPLAIN') }}</span></dt>
+			<dd><label><input type="checkbox" id="patreon_supporters_show_amounts" name="patreon_supporters_show_amounts" value="1"{% if PATREON_SUPPORTERS_SHOW_AMOUNTS %} checked="checked"{% endif %}> {{ lang('ENABLED') }}</label></dd>
+		</dl>
 	</fieldset>
 
 	<fieldset>
@@ -185,7 +197,7 @@
 			<tbody>
 				{% for user in linked_users %}
 				<tr class="{{ loop.index is odd ? 'row1' : 'row2' }}">
-					<td>{{ user.USERNAME }}</td>
+					<td>{{ user.USERNAME | raw }}</td>
 					<td>{{ user.PATREON_USER_ID }}</td>
 					<td>{{ user.TIER_LABEL }}</td>
 					<td>{{ user.PLEDGE_STATUS }}</td>

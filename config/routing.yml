@@ -7,3 +7,8 @@ avathar_bbpatreon_callback:
     path: /patreon/callback
     defaults: { _controller: avathar.bbpatreon.controller.callback:handle }
     methods: [GET]
+
+avathar_bbpatreon_supporters:
+    path: /patreon/supporters
+    defaults: { _controller: avathar.bbpatreon.controller.supporters:handle }
+    methods: [GET]

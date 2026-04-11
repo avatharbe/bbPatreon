@@ -43,6 +43,7 @@ services:
             - '@language'
             - '@avathar.bbpatreon.service.api_client'
             - '@avathar.bbpatreon.service.group_mapper'
+            - '@controller.helper'
             - '%avathar.bbpatreon.tables.patreon_sync%'
         tags:
             - { name: event.listener }
@@ -97,6 +98,19 @@ services:
             - '%tables.auth_provider_oauth_account_assoc%'
             - '%tables.auth_provider_oauth_token_storage%'
             - '%tables.auth_provider_oauth_states%'
+
+    # Supporters page controller
+    avathar.bbpatreon.controller.supporters:
+        class: avathar\bbpatreon\controller\supporters_controller
+        arguments:
+            - '@config'
+            - '@dbal.conn'
+            - '@language'
+            - '@template'
+            - '@controller.helper'
+            - '%avathar.bbpatreon.tables.patreon_sync%'
+            - '%avathar.bbpatreon.tables.patreon_tiers%'
+            - '%tables.auth_provider_oauth_account_assoc%'
 
     # OAuth callback controller
     avathar.bbpatreon.controller.callback:
