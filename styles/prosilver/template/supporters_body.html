@@ -23,7 +23,7 @@
 					<tr class="{{ loop.index is odd ? 'bg1' : 'bg2' }}">
 						<td>{% if supporter.AVATAR %}<span class="avatar-inline">{{ supporter.AVATAR | raw }}</span> {% endif %}{{ supporter.USERNAME | raw }}</td>
 						<td>{{ supporter.RANK_TITLE }}</td>
-						<td>{{ supporter.GROUP_NAME }}</td>
+						<td>{{ supporter.GROUP_NAME | raw }}</td>
 						<td>{{ supporter.TIER_LABEL }}</td>
 						{% if S_SHOW_AMOUNTS %}<td>{{ supporter.PLEDGE_AMOUNT }}</td>{% endif %}
 					</tr>

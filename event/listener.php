@@ -184,7 +184,8 @@ class listener implements EventSubscriberInterface
 
 		if (!empty($badge_parts))
 		{
-			$template_vars['PATREON_BADGE'] = implode(' — ', $badge_parts);
+			$badge = implode(' — ', $badge_parts);
+			$template_vars['USERNAME_FULL'] .= ' <span class="patreon-badge" style="font-size: 0.85em; color: #e87d2a; font-style: italic;">&#9829; ' . $badge . '</span>';
 		}
 
 		$event['template_vars'] = $template_vars;

@@ -76,7 +76,7 @@ class supporters_controller
 
 		$sql = 'SELECT u.username, u.user_colour, u.user_id, u.user_rank,
 				u.user_avatar, u.user_avatar_type, u.user_avatar_width, u.user_avatar_height,
-				u.group_id AS user_default_group, g.group_name, g.group_type,
+				u.group_id AS user_default_group, g.group_name, g.group_type, g.group_colour,
 				pt.tier_label, ps.pledge_cents, ps.show_pledge_public
 			FROM ' . $this->patreon_sync_table . ' ps
 			JOIN ' . $this->oauth_accounts_table . " oa
@@ -114,13 +114,19 @@ class supporters_controller
 
 		foreach ($supporters as $row)
 		{
-			// Resolve group name (translate built-in groups)
-			$group_name = $row['group_name'] ?: '';
-			if ($group_name && (int) $row['group_type'] === GROUP_SPECIAL)
+			// Resolve group name (translate built-in groups, apply colour)
+			$group_name_raw = $row['group_name'] ?: '';
+			if ($group_name_raw && (int) $row['group_type'] === GROUP_SPECIAL)
 			{
-				$group_name = $this->language->is_set('G_' . $group_name)
-					? $this->language->lang('G_' . $group_name)
-					: $group_name;
+				$group_name_raw = $this->language->is_set('G_' . $group_name_raw)
+					? $this->language->lang('G_' . $group_name_raw)
+					: $group_name_raw;
+			}
+
+			$group_name = $group_name_raw;
+			if ($group_name && !empty($row['group_colour']))
+			{
+				$group_name = '<span style="font-weight: bold; color: #' . $row['group_colour'] . ';">' . $group_name . '</span>';
 			}
 
 			// Resolve rank title
