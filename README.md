@@ -54,7 +54,7 @@ Developed and maintained by [Avathar.be](https://www.avathar.be).
   - UCP: "Refresh my status" re-sync button with 5-minute rate limit (#3)
   - UCP: show assigned forum group name, human-readable status labels, last sync time (#3)
   - UCP: color-coded pledge status (active/declined/former/pending) (#3)
-- 1.0.0
+- 1.0.0-dev
   - Initial release
   - OAuth 2.0 account linking via custom PHPoAuthLib service (works with `auth_method = db`)
   - Patreon API v2 client with creator token auto-refresh
