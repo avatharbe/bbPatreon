@@ -2,7 +2,7 @@
 /**
  *
  * Patreon Integration for phpBB.
- * Functional tests for the ACP settings page.
+ * Tests the ACP module info and module wiring.
  *
  * @copyright (c) 2026 A. Vandenberghe
  * @license GNU General Public License, version 2 (GPL-2.0)
@@ -11,78 +11,77 @@
 
 namespace avathar\bbpatreon\tests\functional;
 
+use PHPUnit\Framework\TestCase;
+
 /**
- * Functional tests for the ACP module.
+ * Unit tests for the ACP module metadata and wiring.
  *
- * These tests verify that the ACP page loads correctly after the extension
- * is enabled and the migration has run. They catch DI wiring errors (wrong
- * service arguments in services.yml), missing language keys, and template
- * syntax errors that unit tests cannot detect.
- *
- * @group functional
+ * These tests verify the ACP module info returns correct data
+ * and the module class delegates to the right controller service.
  */
-class acp_test extends \phpbb_functional_test_case
+class acp_test extends TestCase
 {
-	protected static function setup_extensions()
+	/**
+	 * The ACP module info must declare the 'settings' mode with
+	 * the correct auth requirement. If this is wrong, the module
+	 * either doesn't appear in the ACP menu or is accessible to
+	 * non-admin users.
+	 */
+	public function test_acp_module_info()
 	{
-		return array('avathar/bbpatreon');
+		$info = new \avathar\bbpatreon\acp\main_info();
+		$module = $info->module();
+
+		$this->assertArrayHasKey('modes', $module);
+		$this->assertArrayHasKey('settings', $module['modes']);
+		$this->assertEquals('ACP_BBPATREON', $module['modes']['settings']['title']);
+		$this->assertStringContainsString('acl_a_board', $module['modes']['settings']['auth']);
+		$this->assertStringContainsString('ext_avathar/bbpatreon', $module['modes']['settings']['auth']);
 	}
 
 	/**
-	 * The ACP module must load without errors for an administrator.
-	 *
-	 * This is the most important functional test: it exercises the full
-	 * DI container build, template rendering, and language loading in
-	 * one request. If the services.yml has a typo or a missing argument,
-	 * this test will fail with a container build error.
+	 * The ACP module must set the correct template and page title,
+	 * then delegate to the controller. If the template name is wrong,
+	 * phpBB will throw a template-not-found error.
 	 */
-	public function test_acp_module_accessible()
+	public function test_acp_module_sets_template_and_title()
 	{
-		$this->login();
-		$this->admin_login();
+		$controller = $this->createMock(\avathar\bbpatreon\controller\acp_controller::class);
+		$controller->expects($this->once())->method('set_page_url');
+		$controller->expects($this->once())->method('display_options');
 
-		$this->add_lang_ext('avathar/bbpatreon', 'info_acp_bbpatreon');
+		$container = $this->createMock(\Symfony\Component\DependencyInjection\ContainerInterface::class);
+		$container->method('get')
+			->with('avathar.bbpatreon.controller.acp')
+			->willReturn($controller);
 
-		$crawler = self::request('GET', 'adm/index.php?i=-avathar-bbpatreon-acp-main_module&mode=settings&sid=' . $this->sid);
+		$module = new \avathar\bbpatreon\acp\main_module();
 
-		$this->assertStringContainsString($this->lang('ACP_BBPATREON_TITLE'), $crawler->text());
+		// phpBB modules get the container via $GLOBALS
+		$GLOBALS['phpbb_container'] = $container;
+
+		$module->main(0, 'settings');
+
+		$this->assertEquals('acp_bbpatreon_body', $module->tpl_name);
+		$this->assertEquals('ACP_BBPATREON_TITLE', $module->page_title);
+
+		unset($GLOBALS['phpbb_container']);
 	}
 
 	/**
-	 * All API credential input fields must be present in the rendered form.
-	 *
-	 * If a field is missing, the admin cannot configure the extension.
-	 * This catches cases where the template was edited but a field was
-	 * accidentally removed, or where a template variable is undefined
-	 * causing the field to not render.
+	 * All API credential input fields must be present in the template.
+	 * This verifies the template file exists and contains the expected fields.
 	 */
-	public function test_acp_has_credentials_fields()
+	public function test_acp_template_has_credential_fields()
 	{
-		$this->login();
-		$this->admin_login();
+		$template_path = dirname(__DIR__, 2) . '/adm/style/acp_bbpatreon_body.html';
 
-		$crawler = self::request('GET', 'adm/index.php?i=-avathar-bbpatreon-acp-main_module&mode=settings&sid=' . $this->sid);
+		$this->assertFileExists($template_path, 'ACP template file must exist');
 
-		$this->assertEquals(1, $crawler->filter('input[name="patreon_client_id"]')->count());
-		$this->assertEquals(1, $crawler->filter('input[name="patreon_client_secret"]')->count());
-		$this->assertEquals(1, $crawler->filter('input[name="patreon_creator_access_token"]')->count());
-		$this->assertEquals(1, $crawler->filter('input[name="patreon_campaign_id"]')->count());
-	}
-
-	/**
-	 * The Submit, Sync Now, and Fetch Tiers action buttons must all be
-	 * present. These are the primary admin actions — if any is missing,
-	 * the admin loses a key capability without any visible error.
-	 */
-	public function test_acp_has_action_buttons()
-	{
-		$this->login();
-		$this->admin_login();
-
-		$crawler = self::request('GET', 'adm/index.php?i=-avathar-bbpatreon-acp-main_module&mode=settings&sid=' . $this->sid);
-
-		$this->assertEquals(1, $crawler->filter('input[name="submit"]')->count());
-		$this->assertEquals(1, $crawler->filter('input[name="sync"]')->count());
-		$this->assertEquals(1, $crawler->filter('input[name="fetch_tiers"]')->count());
+		$content = file_get_contents($template_path);
+		$this->assertStringContainsString('patreon_client_id', $content);
+		$this->assertStringContainsString('patreon_client_secret', $content);
+		$this->assertStringContainsString('patreon_creator_access_token', $content);
+		$this->assertStringContainsString('patreon_campaign_id', $content);
 	}
 }

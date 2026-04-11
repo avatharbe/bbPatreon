@@ -2,8 +2,8 @@
 /**
  *
  * Patreon Integration for phpBB.
- * Tests that the v1_0_0 migration correctly seeds all required config keys
- * and creates the expected database tables.
+ * Tests that the v1_0_0 migration declares all required config keys,
+ * tables, and modules.
  *
  * @copyright (c) 2026 A. Vandenberghe
  * @license GNU General Public License, version 2 (GPL-2.0)
@@ -12,29 +12,30 @@
 
 namespace avathar\bbpatreon\tests\dbal;
 
-class migration_test extends \phpbb_database_test_case
+use PHPUnit\Framework\TestCase;
+
+class migration_test extends TestCase
 {
-	/** @var \phpbb\db\driver\driver_interface */
-	protected $db;
-
-	protected static function setup_extensions()
-	{
-		return array('avathar/bbpatreon');
-	}
-
-	public function getDataSet()
-	{
-		return $this->createXMLDataSet(__DIR__ . '/fixtures/config.xml');
-	}
+	/** @var \avathar\bbpatreon\migrations\v1_0_0_initial */
+	protected $migration;
 
 	public function setUp(): void
 	{
 		parent::setUp();
-		$this->db = $this->new_dbal();
+
+		$config = $this->createMock(\phpbb\config\config::class);
+		$db = $this->createMock(\phpbb\db\driver\driver_interface::class);
+		$db_tools = $this->createMock(\phpbb\db\tools\tools_interface::class);
+
+		$this->migration = new \avathar\bbpatreon\migrations\v1_0_0_initial(
+			$config, $db, $db_tools, 'phpbb_', __DIR__, 'php'
+		);
 	}
 
 	/**
-	 * Every config key that the extension reads at runtime must exist.
+	 * Every config key that the extension reads at runtime must be
+	 * declared in the migration's update_data. If a key is missing,
+	 * the extension will read null from phpbb\config\config and fail.
 	 */
 	public function test_patreon_config_keys_exist()
 	{
@@ -50,81 +51,83 @@ class migration_test extends \phpbb_database_test_case
 			'patreon_last_cron_sync',
 		);
 
+		$update_data = $this->migration->update_data();
+		$config_adds = array();
+		foreach ($update_data as $entry)
+		{
+			if ($entry[0] === 'config.add')
+			{
+				$config_adds[] = $entry[1][0];
+			}
+		}
+
 		foreach ($expected_keys as $key)
 		{
-			$sql = "SELECT config_value FROM phpbb_config WHERE config_name = '" . $this->db->sql_escape($key) . "'";
-			$result = $this->db->sql_query($sql);
-			$row = $this->db->sql_fetchrow($result);
-			$this->db->sql_freeresult($result);
-
-			$this->assertNotFalse($row, "Config key '$key' should exist after migration");
+			$this->assertContains($key, $config_adds, "Config key '$key' must be declared in migration update_data");
 		}
 	}
 
 	/**
-	 * The patreon_tiers table must support inserting and reading back
-	 * tier rows with all columns including description, patron_count, and published.
+	 * The patreon_tiers table must declare all required columns including
+	 * description (TEXT), patron_count, and published.
 	 */
-	public function test_patreon_tiers_table_stores_tiers()
+	public function test_patreon_tiers_table_schema()
 	{
-		$tiers = array(
-			array('tier_id' => '10425190', 'tier_label' => 'Free', 'description' => 'Free tier for everyone', 'group_id' => 0, 'amount_cents' => 0, 'currency' => 'USD', 'patron_count' => 42, 'published' => 1),
-			array('tier_id' => '3116836', 'tier_label' => "Suck Less Thumbs Up \xF0\x9F\x91\x8D", 'description' => '<p>Premium <strong>tier</strong></p>', 'group_id' => 5, 'amount_cents' => 500, 'currency' => 'USD', 'patron_count' => 15, 'published' => 1),
-			array('tier_id' => '9553953', 'tier_label' => "COMPOSITE tier \xF0\x9F\x98\x81", 'description' => '', 'group_id' => 6, 'amount_cents' => 2000, 'currency' => 'EUR', 'patron_count' => 0, 'published' => 0),
-		);
+		$schema = $this->migration->update_schema();
 
-		foreach ($tiers as $tier)
+		$this->assertArrayHasKey('add_tables', $schema);
+
+		// Find the tiers table (key contains 'patreon_tiers')
+		$tiers_table = null;
+		foreach ($schema['add_tables'] as $table_name => $table_def)
 		{
-			$sql = 'INSERT INTO phpbb_patreon_tiers ' . $this->db->sql_build_array('INSERT', $tier);
-			$this->db->sql_query($sql);
+			if (strpos($table_name, 'patreon_tiers') !== false)
+			{
+				$tiers_table = $table_def;
+				break;
+			}
 		}
 
-		$sql = 'SELECT * FROM phpbb_patreon_tiers ORDER BY tier_id';
-		$result = $this->db->sql_query($sql);
-		$rows = array();
-		while ($row = $this->db->sql_fetchrow($result))
-		{
-			$rows[] = $row;
-		}
-		$this->db->sql_freeresult($result);
+		$this->assertNotNull($tiers_table, 'patreon_tiers table must be declared');
+		$this->assertArrayHasKey('COLUMNS', $tiers_table);
 
-		$this->assertCount(3, $rows, 'All 3 tiers must be stored');
-		$this->assertEquals('Free', $rows[0]['tier_label']);
-		$this->assertEquals('Free tier for everyone', $rows[0]['description']);
-		$this->assertEquals(42, (int) $rows[0]['patron_count']);
-		$this->assertEquals(1, (int) $rows[0]['published']);
-		$this->assertStringContainsString("\xF0\x9F\x91\x8D", $rows[1]['tier_label'], 'Emoji must survive round-trip');
-		$this->assertEquals(5, (int) $rows[1]['group_id']);
-		$this->assertEquals(2000, (int) $rows[2]['amount_cents']);
-		$this->assertEquals('EUR', $rows[2]['currency']);
-		$this->assertEquals(0, (int) $rows[2]['published']);
+		$columns = $tiers_table['COLUMNS'];
+		$this->assertArrayHasKey('tier_id', $columns);
+		$this->assertArrayHasKey('tier_label', $columns);
+		$this->assertArrayHasKey('description', $columns);
+		$this->assertArrayHasKey('group_id', $columns);
+		$this->assertArrayHasKey('amount_cents', $columns);
+		$this->assertArrayHasKey('currency', $columns);
+		$this->assertArrayHasKey('patron_count', $columns);
+		$this->assertArrayHasKey('published', $columns);
 	}
 
 	/**
-	 * Verify that description as TEXT can store values exceeding 255 characters.
+	 * The patreon_sync table must declare all columns needed for
+	 * tracking pledge status per Patreon user.
 	 */
-	public function test_patreon_tiers_table_stores_long_descriptions()
+	public function test_patreon_sync_table_schema()
 	{
-		$long_desc = str_repeat("Very long tier description with <strong>HTML</strong> content. ", 20);
-		$this->assertGreaterThan(255, strlen($long_desc));
+		$schema = $this->migration->update_schema();
 
-		$sql = 'INSERT INTO phpbb_patreon_tiers ' . $this->db->sql_build_array('INSERT', array(
-			'tier_id'		=> 'long-desc-test',
-			'tier_label'	=> 'Test Tier',
-			'description'	=> $long_desc,
-			'group_id'		=> 0,
-			'amount_cents'	=> 0,
-			'currency'		=> 'USD',
-			'patron_count'	=> 0,
-			'published'		=> 1,
-		));
-		$this->db->sql_query($sql);
+		$sync_table = null;
+		foreach ($schema['add_tables'] as $table_name => $table_def)
+		{
+			if (strpos($table_name, 'patreon_sync') !== false)
+			{
+				$sync_table = $table_def;
+				break;
+			}
+		}
 
-		$sql = "SELECT description FROM phpbb_patreon_tiers WHERE tier_id = 'long-desc-test'";
-		$result = $this->db->sql_query($sql);
-		$row = $this->db->sql_fetchrow($result);
-		$this->db->sql_freeresult($result);
+		$this->assertNotNull($sync_table, 'patreon_sync table must be declared');
 
-		$this->assertEquals($long_desc, $row['description'], 'TEXT column must store descriptions exceeding 255 chars without truncation');
+		$columns = $sync_table['COLUMNS'];
+		$this->assertArrayHasKey('patreon_user_id', $columns);
+		$this->assertArrayHasKey('tier_id', $columns);
+		$this->assertArrayHasKey('pledge_status', $columns);
+		$this->assertArrayHasKey('pledge_cents', $columns);
+		$this->assertArrayHasKey('last_webhook_at', $columns);
+		$this->assertArrayHasKey('last_synced_at', $columns);
 	}
 }

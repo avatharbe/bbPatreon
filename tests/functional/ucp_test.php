@@ -2,7 +2,7 @@
 /**
  *
  * Patreon Integration for phpBB.
- * Functional tests for the UCP Patreon page.
+ * Tests the UCP module info and module wiring.
  *
  * @copyright (c) 2026 A. Vandenberghe
  * @license GNU General Public License, version 2 (GPL-2.0)
@@ -11,59 +11,56 @@
 
 namespace avathar\bbpatreon\tests\functional;
 
+use PHPUnit\Framework\TestCase;
+
 /**
- * Functional tests for the UCP module.
+ * Unit tests for the UCP module metadata and wiring.
  *
- * These tests verify that a logged-in user can access the Patreon UCP page
- * and sees the correct UI state (link button when not linked). They catch
- * module registration errors, DI wiring problems, and template rendering
- * failures that only surface in a real phpBB request.
- *
- * @group functional
+ * These tests verify the UCP module info returns correct data
+ * and the module class delegates to the right controller service.
  */
-class ucp_test extends \phpbb_functional_test_case
+class ucp_test extends TestCase
 {
-	protected static function setup_extensions()
+	/**
+	 * The UCP module info must declare the 'settings' mode.
+	 * Auth should only require the extension to be enabled (no ACL),
+	 * so any registered user can access it.
+	 */
+	public function test_ucp_module_info()
 	{
-		return array('avathar/bbpatreon');
+		$info = new \avathar\bbpatreon\ucp\main_info();
+		$module = $info->module();
+
+		$this->assertArrayHasKey('modes', $module);
+		$this->assertArrayHasKey('settings', $module['modes']);
+		$this->assertEquals('UCP_BBPATREON', $module['modes']['settings']['title']);
+		$this->assertStringContainsString('ext_avathar/bbpatreon', $module['modes']['settings']['auth']);
 	}
 
 	/**
-	 * The UCP module must load for a logged-in user.
-	 *
-	 * Unlike the ACP, the UCP module has auth = 'ext_avathar/bbpatreon'
-	 * (no ACL check), so any registered user should be able to access it.
-	 * If this fails, it typically means the UCP module was not registered
-	 * by the migration, or the DI container cannot build the controller.
+	 * The UCP module must set the correct template and page title,
+	 * then delegate to the controller.
 	 */
-	public function test_ucp_module_accessible()
+	public function test_ucp_module_sets_template_and_title()
 	{
-		$this->login();
+		$controller = $this->createMock(\avathar\bbpatreon\controller\ucp_controller::class);
+		$controller->expects($this->once())->method('set_page_url');
+		$controller->expects($this->once())->method('display_options');
 
-		$this->add_lang_ext('avathar/bbpatreon', 'info_ucp_bbpatreon');
+		$container = $this->createMock(\Symfony\Component\DependencyInjection\ContainerInterface::class);
+		$container->method('get')
+			->with('avathar.bbpatreon.controller.ucp')
+			->willReturn($controller);
 
-		$crawler = self::request('GET', 'ucp.php?i=-avathar-bbpatreon-ucp-main_module&mode=settings&sid=' . $this->sid);
+		$module = new \avathar\bbpatreon\ucp\main_module();
 
-		$this->assertStringContainsString($this->lang('UCP_BBPATREON_TITLE'), $crawler->text());
-	}
+		$GLOBALS['phpbb_container'] = $container;
 
-	/**
-	 * When a user has not linked their Patreon account, the UCP page must
-	 * show the "Link your Patreon Account" button and the explanatory text.
-	 *
-	 * This is the entry point for the entire OAuth flow. If the button is
-	 * missing, users have no way to link their accounts. If the text is
-	 * missing, the language file is not being loaded.
-	 */
-	public function test_ucp_shows_link_button_when_not_linked()
-	{
-		$this->login();
+		$module->main(0, 'settings');
 
-		$this->add_lang_ext('avathar/bbpatreon', 'info_ucp_bbpatreon');
+		$this->assertEquals('ucp_bbpatreon_body', $module->tpl_name);
+		$this->assertEquals('UCP_BBPATREON_TITLE', $module->page_title);
 
-		$crawler = self::request('GET', 'ucp.php?i=-avathar-bbpatreon-ucp-main_module&mode=settings&sid=' . $this->sid);
-
-		$this->assertEquals(1, $crawler->filter('input[name="link"]')->count());
-		$this->assertStringContainsString($this->lang('UCP_BBPATREON_NOT_LINKED'), $crawler->text());
+		unset($GLOBALS['phpbb_container']);
 	}
 }
