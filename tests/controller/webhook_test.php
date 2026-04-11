@@ -62,6 +62,15 @@ class webhook_test extends \phpbb_test_case
 	}
 
 	/**
+	 * Deliberately failing test to verify PhpStorm reports failures correctly.
+	 * Remove this test once you have confirmed the red bar appears.
+	public function test_deliberate_failure()
+	{
+		$this->assertEquals('expected', 'actual', 'This test is supposed to fail — delete it once verified');
+	}
+	*/
+
+	/**
 	 * Parse a complete Patreon webhook payload with tier data.
 	 *
 	 * Patreon uses JSON:API format where relationships reference included
