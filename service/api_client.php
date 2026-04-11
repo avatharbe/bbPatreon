@@ -210,15 +210,10 @@ class api_client
 				}
 
 				$tier_id = '';
-				$tier_label = '';
 				if (!empty($member['relationships']['currently_entitled_tiers']['data']))
 				{
 					$tier_data = $member['relationships']['currently_entitled_tiers']['data'][0];
 					$tier_id = $tier_data['id'];
-					if (isset($included['tier'][$tier_id]['attributes']['title']))
-					{
-						$tier_label = $included['tier'][$tier_id]['attributes']['title'];
-					}
 				}
 
 				$members[] = [
@@ -226,7 +221,6 @@ class api_client
 					'patron_status'		=> $member['attributes']['patron_status'] ?? '',
 					'pledge_cents'		=> $member['attributes']['currently_entitled_amount_cents'] ?? 0,
 					'tier_id'			=> $tier_id,
-					'tier_label'		=> $tier_label,
 				];
 			}
 

@@ -2,7 +2,8 @@
 /**
  *
  * Patreon Integration for phpBB.
- * Tests that the v1_0_0 migration correctly seeds all required config keys.
+ * Tests that the v1_0_0 migration correctly seeds all required config keys
+ * and creates the expected database tables.
  *
  * @copyright (c) 2026 A. Vandenberghe
  * @license GNU General Public License, version 2 (GPL-2.0)
@@ -11,17 +12,6 @@
 
 namespace avathar\bbpatreon\tests\dbal;
 
-/**
- * Database test for the initial migration.
- *
- * Verifies that every config key the extension relies on is present after
- * the migration runs. If a key is missing, the ACP settings page, cron task,
- * and webhook controller will throw undefined-index errors at runtime.
- *
- * The fixture seeds the expected rows directly; the test confirms they can
- * be read back, proving the schema is compatible with the migration's
- * config.add calls.
- */
 class migration_test extends \phpbb_database_test_case
 {
 	/** @var \phpbb\db\driver\driver_interface */
@@ -45,11 +35,6 @@ class migration_test extends \phpbb_database_test_case
 
 	/**
 	 * Every config key that the extension reads at runtime must exist.
-	 *
-	 * Without these keys, accessing $config['patreon_*'] returns null,
-	 * which breaks JSON decoding (tier map), numeric comparisons (grace
-	 * period), and empty-string checks (API tokens). This test catches
-	 * any key that was accidentally omitted from the migration.
 	 */
 	public function test_patreon_config_keys_exist()
 	{
@@ -77,65 +62,62 @@ class migration_test extends \phpbb_database_test_case
 	}
 
 	/**
-	 * Tier labels with many tiers and emoji can exceed the 255-char limit
-	 * of phpbb_config. This test verifies that config_text can store the
-	 * kind of payload that triggered issue #6.
-	 *
-	 * @see https://github.com/avatharbe/bbPatreon/issues/6
+	 * The patreon_tiers table must support inserting and reading back
+	 * tier rows with TEXT labels (emoji, long names).
 	 */
-	public function test_config_text_stores_long_tier_labels()
+	public function test_patreon_tiers_table_stores_tiers()
 	{
-		$config_text = new \phpbb\config\db_text($this->db, 'phpbb_config_text');
+		$tiers = array(
+			array('tier_id' => '10425190', 'tier_label' => 'Free', 'group_id' => 0, 'amount_cents' => 0, 'currency' => 'USD'),
+			array('tier_id' => '3116836', 'tier_label' => "Suck Less Thumbs Up \xF0\x9F\x91\x8D", 'group_id' => 5, 'amount_cents' => 500, 'currency' => 'USD'),
+			array('tier_id' => '9553953', 'tier_label' => "4 is the smallest COMPOSITE number \xF0\x9F\x98\x81", 'group_id' => 6, 'amount_cents' => 2000, 'currency' => 'EUR'),
+		);
 
-		// Realistic payload from the bug report — 10 tiers with emoji
-		$tier_labels = json_encode(array(
-			'10425190' => 'Free',
-			'3116836'  => "Suck Less Thumbs Up",
-			'4249194'  => "Suck Less TWO Thumbs Up",
-			'8043226'  => "Suck Less THREE Thumbs Up!",
-			'9553953'  => "4 is the smallest COMPOSITE number \xF0\x9F\x98\x81",
-			'3088625'  => "Suck Less High Five",
-			'4249251'  => "Suck Less On Tap",
-			'3132211'  => "Suck Less Sweet Sixteen",
-			'7436306'  => "WSL (WSL Sponsor Level)",
-			'3116840'  => "Suck Less Sugarnonckle",
-		));
+		foreach ($tiers as $tier)
+		{
+			$sql = 'INSERT INTO phpbb_patreon_tiers ' . $this->db->sql_build_array('INSERT', $tier);
+			$this->db->sql_query($sql);
+		}
 
-		$this->assertGreaterThan(255, strlen($tier_labels), 'Test payload must exceed 255 chars to be meaningful');
+		$sql = 'SELECT tier_id, tier_label, group_id, amount_cents, currency FROM phpbb_patreon_tiers ORDER BY tier_id';
+		$result = $this->db->sql_query($sql);
+		$rows = array();
+		while ($row = $this->db->sql_fetchrow($result))
+		{
+			$rows[] = $row;
+		}
+		$this->db->sql_freeresult($result);
 
-		$config_text->set('patreon_tier_labels', $tier_labels);
-		$value = $config_text->get('patreon_tier_labels');
-
-		$this->assertEquals($tier_labels, $value, 'config_text must store and retrieve long JSON without truncation');
-
-		$decoded = json_decode($value, true);
-		$this->assertCount(10, $decoded, 'All 10 tiers must survive the round-trip');
+		$this->assertCount(3, $rows, 'All 3 tiers must be stored');
+		$this->assertEquals('Free', $rows[0]['tier_label']);
+		$this->assertStringContainsString("\xF0\x9F\x91\x8D", $rows[1]['tier_label'], 'Emoji must survive round-trip');
+		$this->assertEquals(5, (int) $rows[1]['group_id']);
+		$this->assertEquals(2000, (int) $rows[2]['amount_cents']);
+		$this->assertEquals('EUR', $rows[2]['currency']);
 	}
 
 	/**
-	 * Verify that a large tier-group map with many tiers can be stored
-	 * and retrieved without truncation.
+	 * Verify that tier_label as TEXT can store values exceeding 255 characters.
 	 */
-	public function test_config_text_stores_long_tier_group_map()
+	public function test_patreon_tiers_table_stores_long_labels()
 	{
-		$config_text = new \phpbb\config\db_text($this->db, 'phpbb_config_text');
+		$long_label = str_repeat("Very Long Tier Name \xF0\x9F\x98\x81 ", 20);
+		$this->assertGreaterThan(255, strlen($long_label));
 
-		// Build a map with 20 tiers to exceed 255 chars
-		$map = array();
-		for ($i = 1; $i <= 20; $i++)
-		{
-			$map['tier_' . str_pad($i, 8, '0', STR_PAD_LEFT)] = $i + 100;
-		}
-		$json = json_encode($map);
+		$sql = 'INSERT INTO phpbb_patreon_tiers ' . $this->db->sql_build_array('INSERT', array(
+			'tier_id'		=> 'long-label-test',
+			'tier_label'	=> $long_label,
+			'group_id'		=> 0,
+			'amount_cents'	=> 0,
+			'currency'		=> 'USD',
+		));
+		$this->db->sql_query($sql);
 
-		$this->assertGreaterThan(255, strlen($json), 'Test payload must exceed 255 chars to be meaningful');
+		$sql = "SELECT tier_label FROM phpbb_patreon_tiers WHERE tier_id = 'long-label-test'";
+		$result = $this->db->sql_query($sql);
+		$row = $this->db->sql_fetchrow($result);
+		$this->db->sql_freeresult($result);
 
-		$config_text->set('patreon_tier_group_map', $json);
-		$value = $config_text->get('patreon_tier_group_map');
-
-		$this->assertEquals($json, $value, 'config_text must store and retrieve long JSON without truncation');
-
-		$decoded = json_decode($value, true);
-		$this->assertCount(20, $decoded, 'All 20 tier mappings must survive the round-trip');
+		$this->assertEquals($long_label, $row['tier_label'], 'TEXT column must store labels exceeding 255 chars without truncation');
 	}
 }

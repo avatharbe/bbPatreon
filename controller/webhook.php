@@ -37,6 +37,9 @@ class webhook
 	protected $patreon_sync_table;
 
 	/** @var string */
+	protected $patreon_tiers_table;
+
+	/** @var string */
 	protected $oauth_accounts_table;
 
 	/**
@@ -50,6 +53,7 @@ class webhook
 		\avathar\bbpatreon\service\group_mapper $group_mapper,
 		\phpbb\event\dispatcher_interface $dispatcher,
 		string $patreon_sync_table,
+		string $patreon_tiers_table,
 		string $oauth_accounts_table
 	)
 	{
@@ -60,6 +64,7 @@ class webhook
 		$this->group_mapper			= $group_mapper;
 		$this->dispatcher			= $dispatcher;
 		$this->patreon_sync_table	= $patreon_sync_table;
+		$this->patreon_tiers_table	= $patreon_tiers_table;
 		$this->oauth_accounts_table	= $oauth_accounts_table;
 	}
 
@@ -111,23 +116,9 @@ class webhook
 
 		// Extract tier info
 		$tier_id = '';
-		$tier_label = '';
 		if (!empty($relationships['currently_entitled_tiers']['data']))
 		{
 			$tier_id = $relationships['currently_entitled_tiers']['data'][0]['id'] ?? '';
-		}
-
-		// Check included resources for tier label
-		if ($tier_id && isset($payload['included']))
-		{
-			foreach ($payload['included'] as $resource)
-			{
-				if ($resource['type'] === 'tier' && $resource['id'] === $tier_id)
-				{
-					$tier_label = $resource['attributes']['title'] ?? '';
-					break;
-				}
-			}
 		}
 
 		$patron_status = $attributes['patron_status'] ?? '';
@@ -142,7 +133,10 @@ class webhook
 		}
 
 		// Upsert sync table
-		$this->upsert_sync($patreon_user_id, $tier_id, $tier_label, $patron_status, $pledge_cents);
+		$this->upsert_sync($patreon_user_id, $tier_id, $patron_status, $pledge_cents);
+
+		// Look up tier label for logging
+		$tier_label = $this->get_tier_label($tier_id);
 
 		// Log the webhook event
 		$this->log->add('admin', ANONYMOUS, '', 'LOG_PATREON_WEBHOOK_EVENT', false, [
@@ -186,7 +180,7 @@ class webhook
 		 * @var string	patreon_user_id		Patreon user ID
 		 * @var string	patron_status		active_patron, declined_patron, former_patron, or pending_link
 		 * @var string	tier_id				Patreon tier ID (empty string if no active tier)
-		 * @var string	tier_label			Human-readable tier name (empty string if no active tier)
+		 * @var string	tier_label			Human-readable tier name from patreon_tiers table (empty string if no active tier)
 		 * @var int		pledge_cents		Pledge amount in cents (0 if cancelled)
 		 * @since 1.0.0
 		 */
@@ -223,9 +217,28 @@ class webhook
 	}
 
 	/**
+	 * Look up a tier label from the patreon_tiers table.
+	 */
+	protected function get_tier_label(string $tier_id): string
+	{
+		if (empty($tier_id))
+		{
+			return '';
+		}
+
+		$sql = 'SELECT tier_label FROM ' . $this->patreon_tiers_table . "
+			WHERE tier_id = '" . $this->db->sql_escape($tier_id) . "'";
+		$result = $this->db->sql_query($sql);
+		$row = $this->db->sql_fetchrow($result);
+		$this->db->sql_freeresult($result);
+
+		return $row ? $row['tier_label'] : '';
+	}
+
+	/**
 	 * Insert or update the patreon_sync record.
 	 */
-	protected function upsert_sync(string $patreon_user_id, string $tier_id, string $tier_label, string $pledge_status, int $pledge_cents): void
+	protected function upsert_sync(string $patreon_user_id, string $tier_id, string $pledge_status, int $pledge_cents): void
 	{
 		$sql = 'SELECT patreon_user_id FROM ' . $this->patreon_sync_table . "
 			WHERE patreon_user_id = '" . $this->db->sql_escape($patreon_user_id) . "'";
@@ -235,7 +248,6 @@ class webhook
 
 		$data = [
 			'tier_id'			=> $tier_id,
-			'tier_label'		=> $tier_label,
 			'pledge_status'		=> $pledge_status,
 			'pledge_cents'		=> $pledge_cents,
 			'last_webhook_at'	=> time(),

@@ -16,38 +16,38 @@ class group_mapper
 	/** @var \phpbb\config\config */
 	protected $config;
 
-	/** @var \phpbb\config\db_text */
-	protected $config_text;
-
 	/** @var \phpbb\db\driver\driver_interface */
 	protected $db;
 
 	/** @var \phpbb\log\log_interface */
 	protected $log;
 
+	/** @var string */
+	protected $patreon_tiers_table;
+
 	/**
 	 * Constructor.
 	 *
 	 * @param \phpbb\config\config				$config
-	 * @param \phpbb\config\db_text				$config_text
 	 * @param \phpbb\db\driver\driver_interface	$db
 	 * @param \phpbb\log\log_interface			$log
 	 * @param string							$root_path
 	 * @param string							$php_ext
+	 * @param string							$patreon_tiers_table
 	 */
 	public function __construct(
 		\phpbb\config\config $config,
-		\phpbb\config\db_text $config_text,
 		\phpbb\db\driver\driver_interface $db,
 		\phpbb\log\log_interface $log,
 		string $root_path,
-		string $php_ext
+		string $php_ext,
+		string $patreon_tiers_table
 	)
 	{
-		$this->config		= $config;
-		$this->config_text	= $config_text;
-		$this->db			= $db;
-		$this->log			= $log;
+		$this->config				= $config;
+		$this->db					= $db;
+		$this->log					= $log;
+		$this->patreon_tiers_table	= $patreon_tiers_table;
 
 		if (!function_exists('group_user_add'))
 		{
@@ -56,14 +56,23 @@ class group_mapper
 	}
 
 	/**
-	 * Get the tier-to-group mapping from config.
+	 * Get the tier-to-group mapping from the patreon_tiers table.
 	 *
 	 * @return array tier_id => group_id
 	 */
 	public function get_tier_group_map(): array
 	{
-		$map = json_decode($this->config_text->get('patreon_tier_group_map') ?: '{}', true);
-		return is_array($map) ? $map : [];
+		$sql = 'SELECT tier_id, group_id FROM ' . $this->patreon_tiers_table;
+		$result = $this->db->sql_query($sql);
+
+		$map = [];
+		while ($row = $this->db->sql_fetchrow($result))
+		{
+			$map[$row['tier_id']] = (int) $row['group_id'];
+		}
+		$this->db->sql_freeresult($result);
+
+		return $map;
 	}
 
 	/**

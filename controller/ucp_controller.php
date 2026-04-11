@@ -44,6 +44,9 @@ class ucp_controller
 	protected $patreon_sync_table;
 
 	/** @var string */
+	protected $patreon_tiers_table;
+
+	/** @var string */
 	protected $oauth_accounts_table;
 
 	/** @var string */
@@ -73,6 +76,7 @@ class ucp_controller
 		\avathar\bbpatreon\service\api_client $api_client,
 		\phpbb\notification\manager $notification_manager,
 		string $patreon_sync_table,
+		string $patreon_tiers_table,
 		string $oauth_accounts_table,
 		string $oauth_token_table,
 		string $oauth_state_table
@@ -89,6 +93,7 @@ class ucp_controller
 		$this->log					= $log;
 		$this->notification_manager	= $notification_manager;
 		$this->patreon_sync_table	= $patreon_sync_table;
+		$this->patreon_tiers_table	= $patreon_tiers_table;
 		$this->oauth_accounts_table	= $oauth_accounts_table;
 		$this->oauth_token_table	= $oauth_token_table;
 		$this->oauth_state_table	= $oauth_state_table;
@@ -144,12 +149,14 @@ class ucp_controller
 			list($errors, $sql, $is_linked, $patreon_user_id) = $this->HandleUnlinking($errors, $patreon_user_id, $user_id, $is_linked);
 		}
 
-		// Get sync data if linked
+		// Get sync data if linked (join on patreon_tiers for label)
 		$sync_data = [];
 		if ($is_linked)
 		{
-			$sql = 'SELECT * FROM ' . $this->patreon_sync_table . "
-				WHERE patreon_user_id = '" . $this->db->sql_escape($patreon_user_id) . "'";
+			$sql = 'SELECT ps.*, pt.tier_label
+				FROM ' . $this->patreon_sync_table . ' ps
+				LEFT JOIN ' . $this->patreon_tiers_table . " pt ON (pt.tier_id = ps.tier_id)
+				WHERE ps.patreon_user_id = '" . $this->db->sql_escape($patreon_user_id) . "'";
 			$result = $this->db->sql_query($sql);
 			$sync_data = $this->db->sql_fetchrow($result) ?: [];
 			$this->db->sql_freeresult($result);
@@ -254,7 +261,6 @@ class ucp_controller
 
 		$patron_status = 'pending_link';
 		$tier_id = '';
-		$tier_label = '';
 		$pledge_cents = 0;
 
 		foreach ($members as $member)
@@ -263,17 +269,19 @@ class ucp_controller
 			{
 				$patron_status = $member['patron_status'] ?: 'pending_link';
 				$tier_id = $member['tier_id'];
-				$tier_label = $member['tier_label'];
 				$pledge_cents = (int) $member['pledge_cents'];
 				break;
 			}
 		}
 
 		// Upsert sync table
-		$this->upsert_sync($patreon_user_id, $tier_id, $tier_label, $patron_status, $pledge_cents);
+		$this->upsert_sync($patreon_user_id, $tier_id, $patron_status, $pledge_cents);
 
 		// Sync groups
 		$this->group_mapper->sync_user_groups($user_id, $tier_id, $patron_status);
+
+		// Look up tier label for logging
+		$tier_label = $this->get_tier_label($tier_id);
 
 		// Log the link event
 		$this->log->add('admin', $user_id, $this->user->ip, 'LOG_PATREON_LINKED', false, [
@@ -287,7 +295,7 @@ class ucp_controller
 		$this->notification_manager->add_notifications('avathar.bbpatreon.notification.type.patreon_linked', [
 			'user_id'			=> $user_id,
 			'patreon_user_id'	=> $patreon_user_id,
-			'tier_label'		=> $tier_label,
+			'tier_id'			=> $tier_id,
 			'pledge_status'		=> $patron_status,
 		]);
 
@@ -319,9 +327,28 @@ class ucp_controller
 	}
 
 	/**
+	 * Look up a tier label from the patreon_tiers table.
+	 */
+	protected function get_tier_label(string $tier_id): string
+	{
+		if (empty($tier_id))
+		{
+			return '';
+		}
+
+		$sql = 'SELECT tier_label FROM ' . $this->patreon_tiers_table . "
+			WHERE tier_id = '" . $this->db->sql_escape($tier_id) . "'";
+		$result = $this->db->sql_query($sql);
+		$row = $this->db->sql_fetchrow($result);
+		$this->db->sql_freeresult($result);
+
+		return $row ? $row['tier_label'] : '';
+	}
+
+	/**
 	 * Insert or update the patreon_sync record.
 	 */
-	protected function upsert_sync(string $patreon_user_id, string $tier_id, string $tier_label, string $pledge_status, int $pledge_cents): void
+	protected function upsert_sync(string $patreon_user_id, string $tier_id, string $pledge_status, int $pledge_cents): void
 	{
 		$sql = 'SELECT patreon_user_id FROM ' . $this->patreon_sync_table . "
 			WHERE patreon_user_id = '" . $this->db->sql_escape($patreon_user_id) . "'";
@@ -331,7 +358,6 @@ class ucp_controller
 
 		$data = [
 			'tier_id'			=> $tier_id,
-			'tier_label'		=> $tier_label,
 			'pledge_status'		=> $pledge_status,
 			'pledge_cents'		=> $pledge_cents,
 			'last_synced_at'	=> time(),

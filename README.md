@@ -42,7 +42,7 @@ Developed and maintained by [Avathar.be](https://www.avathar.be).
   - OAuth 2.0 account linking via custom PHPoAuthLib service (works with `auth_method = db`)
   - Patreon API v2 client with creator token auto-refresh
   - Tier-to-group mapper with grace period support
-  - Tier labels and tier-group map stored in config_text (no 255-char limit)
+  - Dedicated `patreon_tiers` table for tier metadata and group mapping
   - Webhook receiver with HMAC-MD5 signature validation
   - Nightly cron reconciliation task
   - ACP: API credentials, webhook management, tier mapping, linked users table

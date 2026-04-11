@@ -106,7 +106,6 @@ class listener implements EventSubscriberInterface
 
 		$patron_status = 'pending_link';
 		$tier_id = '';
-		$tier_label = '';
 		$pledge_cents = 0;
 
 		foreach ($members as $member)
@@ -115,14 +114,13 @@ class listener implements EventSubscriberInterface
 			{
 				$patron_status = $member['patron_status'] ?: 'pending_link';
 				$tier_id = $member['tier_id'];
-				$tier_label = $member['tier_label'];
 				$pledge_cents = (int) $member['pledge_cents'];
 				break;
 			}
 		}
 
 		// Upsert patreon_sync table
-		$this->upsert_sync($patreon_user_id, $tier_id, $tier_label, $patron_status, $pledge_cents);
+		$this->upsert_sync($patreon_user_id, $tier_id, $patron_status, $pledge_cents);
 
 		// Sync phpBB group membership
 		$this->group_mapper->sync_user_groups($user_id, $tier_id, $patron_status);
@@ -131,7 +129,7 @@ class listener implements EventSubscriberInterface
 	/**
 	 * Insert or update the patreon_sync record.
 	 */
-	protected function upsert_sync(string $patreon_user_id, string $tier_id, string $tier_label, string $pledge_status, int $pledge_cents): void
+	protected function upsert_sync(string $patreon_user_id, string $tier_id, string $pledge_status, int $pledge_cents): void
 	{
 		$sql = 'SELECT patreon_user_id FROM ' . $this->patreon_sync_table . "
 			WHERE patreon_user_id = '" . $this->db->sql_escape($patreon_user_id) . "'";
@@ -141,7 +139,6 @@ class listener implements EventSubscriberInterface
 
 		$data = [
 			'tier_id'			=> $tier_id,
-			'tier_label'		=> $tier_label,
 			'pledge_status'		=> $pledge_status,
 			'pledge_cents'		=> $pledge_cents,
 			'last_synced_at'	=> time(),

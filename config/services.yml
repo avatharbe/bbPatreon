@@ -28,11 +28,11 @@ services:
         class: avathar\bbpatreon\service\group_mapper
         arguments:
             - '@config'
-            - '@config_text'
             - '@dbal.conn'
             - '@log'
             - '%core.root_path%'
             - '%core.php_ext%'
+            - '%avathar.bbpatreon.tables.patreon_tiers%'
 
     # Event listener
     avathar.bbpatreon.listener:
@@ -58,6 +58,7 @@ services:
             - '@avathar.bbpatreon.service.group_mapper'
             - '@dispatcher'
             - '%avathar.bbpatreon.tables.patreon_sync%'
+            - '%avathar.bbpatreon.tables.patreon_tiers%'
             - '%tables.auth_provider_oauth_account_assoc%'
 
     # ACP controller
@@ -73,8 +74,8 @@ services:
             - '@user'
             - '@avathar.bbpatreon.service.api_client'
             - '@avathar.bbpatreon.service.group_mapper'
-            - '@config_text'
             - '%avathar.bbpatreon.tables.patreon_sync%'
+            - '%avathar.bbpatreon.tables.patreon_tiers%'
             - '%tables.auth_provider_oauth_account_assoc%'
 
     # UCP controller
@@ -92,6 +93,7 @@ services:
             - '@avathar.bbpatreon.service.api_client'
             - '@notification_manager'
             - '%avathar.bbpatreon.tables.patreon_sync%'
+            - '%avathar.bbpatreon.tables.patreon_tiers%'
             - '%tables.auth_provider_oauth_account_assoc%'
             - '%tables.auth_provider_oauth_token_storage%'
             - '%tables.auth_provider_oauth_states%'

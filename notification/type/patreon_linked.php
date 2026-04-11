@@ -111,7 +111,7 @@ class patreon_linked extends \phpbb\notification\type\base
 	public function get_reference()
 	{
 		return $this->language->lang('NOTIFICATION_PATREON_LINKED_REFERENCE',
-			$this->get_data('tier_label') ?: $this->language->lang('PATREON_NEVER')
+			$this->get_data('tier_id') ?: $this->language->lang('PATREON_NEVER')
 		);
 	}
 
@@ -152,7 +152,7 @@ class patreon_linked extends \phpbb\notification\type\base
 	 */
 	public function create_insert_array($type_data, $pre_create_data = [])
 	{
-		$this->set_data('tier_label', $type_data['tier_label'] ?? '');
+		$this->set_data('tier_id', $type_data['tier_id'] ?? '');
 		$this->set_data('pledge_status', $type_data['pledge_status'] ?? '');
 		$this->set_data('patreon_user_id', $type_data['patreon_user_id'] ?? '');
 

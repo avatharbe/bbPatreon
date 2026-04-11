@@ -30,13 +30,22 @@ class v1_0_0_initial extends \phpbb\db\migration\migration
 					'COLUMNS' => [
 						'patreon_user_id'	=> ['VCHAR:64', ''],
 						'tier_id'			=> ['VCHAR:64', ''],
-						'tier_label'		=> ['VCHAR:100', ''],
 						'pledge_status'		=> ['VCHAR:20', 'pending_link'],
 						'pledge_cents'		=> ['UINT', 0],
 						'last_webhook_at'	=> ['TIMESTAMP', 0],
 						'last_synced_at'	=> ['TIMESTAMP', 0],
 					],
 					'PRIMARY_KEY' => 'patreon_user_id',
+				],
+				$this->table_prefix . 'patreon_tiers' => [
+					'COLUMNS' => [
+						'tier_id'		=> ['VCHAR:64', ''],
+						'tier_label'	=> ['TEXT', ''],
+						'group_id'		=> ['UINT', 0],
+						'amount_cents'	=> ['UINT', 0],
+						'currency'		=> ['VCHAR:3', ''],
+					],
+					'PRIMARY_KEY' => 'tier_id',
 				],
 			],
 		];
@@ -47,6 +56,7 @@ class v1_0_0_initial extends \phpbb\db\migration\migration
 		return [
 			'drop_tables' => [
 				$this->table_prefix . 'patreon_sync',
+				$this->table_prefix . 'patreon_tiers',
 			],
 		];
 	}
@@ -63,8 +73,6 @@ class v1_0_0_initial extends \phpbb\db\migration\migration
 			['config.add', ['patreon_webhook_secret', '']],
 			['config.add', ['patreon_currency', 'USD']],
 			['config.add', ['patreon_grace_period_days', 0]],
-			['config_text.add', ['patreon_tier_group_map', '{}']],
-			['config_text.add', ['patreon_tier_labels', '{}']],
 			['config.add', ['patreon_last_cron_sync', 0]],
 
 			// phpBB OAuth convention keys (synced with patreon_client_id/secret by ACP)

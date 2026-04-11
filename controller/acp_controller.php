@@ -40,11 +40,11 @@ class acp_controller
 	/** @var \avathar\bbpatreon\service\group_mapper */
 	protected $group_mapper;
 
-	/** @var \phpbb\config\db_text */
-	protected $config_text;
-
 	/** @var string */
 	protected $patreon_sync_table;
+
+	/** @var string */
+	protected $patreon_tiers_table;
 
 	/** @var string */
 	protected $oauth_accounts_table;
@@ -62,8 +62,8 @@ class acp_controller
 		\phpbb\user $user,
 		\avathar\bbpatreon\service\api_client $api_client,
 		\avathar\bbpatreon\service\group_mapper $group_mapper,
-		\phpbb\config\db_text $config_text,
 		string $patreon_sync_table,
+		string $patreon_tiers_table,
 		string $oauth_accounts_table
 	)
 	{
@@ -76,8 +76,8 @@ class acp_controller
 		$this->user					= $user;
 		$this->api_client			= $api_client;
 		$this->group_mapper			= $group_mapper;
-		$this->config_text			= $config_text;
 		$this->patreon_sync_table	= $patreon_sync_table;
+		$this->patreon_tiers_table	= $patreon_tiers_table;
 		$this->oauth_accounts_table	= $oauth_accounts_table;
 	}
 
@@ -128,9 +128,15 @@ class acp_controller
 		// Get phpBB groups for the tier mapping dropdowns
 		$groups = $this->get_phpbb_groups();
 
-		// Parse tier-group map and tier labels for display
-		$tier_group_map = json_decode($this->config_text->get('patreon_tier_group_map') ?: '{}', true) ?: [];
-		$tier_labels = json_decode($this->config_text->get('patreon_tier_labels') ?: '{}', true) ?: [];
+		// Load tiers from database
+		$sql = 'SELECT tier_id, tier_label, group_id FROM ' . $this->patreon_tiers_table . ' ORDER BY tier_label ASC';
+		$result = $this->db->sql_query($sql);
+		$tiers = [];
+		while ($row = $this->db->sql_fetchrow($result))
+		{
+			$tiers[] = $row;
+		}
+		$this->db->sql_freeresult($result);
 
 		$this->template->assign_vars([
 			'S_ERROR'		=> $s_errors,
@@ -145,17 +151,16 @@ class acp_controller
 			'PATREON_CAMPAIGN_ID'			=> $this->config['patreon_campaign_id'],
 			'PATREON_WEBHOOK_SECRET'		=> $this->config['patreon_webhook_secret'],
 			'PATREON_GRACE_PERIOD_DAYS'		=> (int) $this->config['patreon_grace_period_days'],
-			'PATREON_TIER_GROUP_MAP_JSON'	=> $this->config_text->get('patreon_tier_group_map') ?: '{}',
 			'PATREON_LAST_SYNC'				=> $this->config['patreon_last_cron_sync'] ? $this->user->format_date((int) $this->config['patreon_last_cron_sync']) : $this->language->lang('PATREON_NEVER'),
 		]);
 
 		// Assign tier mapping rows
-		foreach ($tier_group_map as $tier_id => $group_id)
+		foreach ($tiers as $tier)
 		{
 			$this->template->assign_block_vars('tier_map', [
-				'TIER_ID'		=> $tier_id,
-				'TIER_LABEL'	=> $tier_labels[$tier_id] ?? '',
-				'GROUP_ID'		=> (int) $group_id,
+				'TIER_ID'		=> $tier['tier_id'],
+				'TIER_LABEL'	=> $tier['tier_label'],
+				'GROUP_ID'		=> (int) $tier['group_id'],
 			]);
 		}
 
@@ -204,20 +209,21 @@ class acp_controller
 		$this->config->set('auth_oauth_patreon_key', $client_id);
 		$this->config->set('auth_oauth_patreon_secret', $client_secret);
 
-		// Build tier-group map from form arrays
+		// Update tier-group mappings from form arrays
 		$tier_ids = $this->request->variable('tier_ids', ['']);
 		$group_ids = $this->request->variable('group_ids', [0]);
 
-		$map = [];
 		foreach ($tier_ids as $i => $tid)
 		{
 			$tid = trim($tid);
-			if (!empty($tid) && isset($group_ids[$i]) && $group_ids[$i] > 0)
+			if (!empty($tid))
 			{
-				$map[$tid] = (int) $group_ids[$i];
+				$sql = 'UPDATE ' . $this->patreon_tiers_table . '
+					SET group_id = ' . (int) ($group_ids[$i] ?? 0) . "
+					WHERE tier_id = '" . $this->db->sql_escape($tid) . "'";
+				$this->db->sql_query($sql);
 			}
 		}
-		$this->config_text->set('patreon_tier_group_map', json_encode($map));
 	}
 
 	/**
@@ -257,7 +263,6 @@ class acp_controller
 			$this->upsert_sync(
 				$member['patreon_user_id'],
 				$member['tier_id'],
-				$member['tier_label'],
 				$member['patron_status'] ?: 'pending_link',
 				(int) $member['pledge_cents']
 			);
@@ -406,11 +411,12 @@ class acp_controller
 	protected function get_linked_users(): array
 	{
 		$sql = 'SELECT u.username, oa.oauth_provider_id as patreon_user_id,
-				ps.tier_label, ps.pledge_status, ps.pledge_cents,
+				pt.tier_label, ps.pledge_status, ps.pledge_cents,
 				ps.last_webhook_at, ps.last_synced_at
 			FROM ' . $this->oauth_accounts_table . ' oa
 			LEFT JOIN ' . USERS_TABLE . ' u ON (u.user_id = oa.user_id)
-			LEFT JOIN ' . $this->patreon_sync_table . " ps ON (ps.patreon_user_id = oa.oauth_provider_id)
+			LEFT JOIN ' . $this->patreon_sync_table . ' ps ON (ps.patreon_user_id = oa.oauth_provider_id)
+			LEFT JOIN ' . $this->patreon_tiers_table . " pt ON (pt.tier_id = ps.tier_id)
 			WHERE oa.provider = 'patreon'
 			ORDER BY u.username ASC";
 		$result = $this->db->sql_query($sql);
@@ -450,7 +456,7 @@ class acp_controller
 		return $groups;
 	}
 
-	protected function upsert_sync(string $patreon_user_id, string $tier_id, string $tier_label, string $pledge_status, int $pledge_cents): void
+	protected function upsert_sync(string $patreon_user_id, string $tier_id, string $pledge_status, int $pledge_cents): void
 	{
 		$sql = 'SELECT patreon_user_id FROM ' . $this->patreon_sync_table . "
 			WHERE patreon_user_id = '" . $this->db->sql_escape($patreon_user_id) . "'";
@@ -460,7 +466,6 @@ class acp_controller
 
 		$data = [
 			'tier_id'			=> $tier_id,
-			'tier_label'		=> $tier_label,
 			'pledge_status'		=> $pledge_status,
 			'pledge_cents'		=> $pledge_cents,
 			'last_synced_at'	=> time(),
@@ -612,7 +617,10 @@ class acp_controller
 					{
 						if ($resource['type'] === 'tier')
 						{
-							$tiers[$resource['id']] = $resource['attributes']['title'] ?? '';
+							$tiers[$resource['id']] = [
+								'title'			=> $resource['attributes']['title'] ?? '',
+								'amount_cents'	=> (int) ($resource['attributes']['amount_cents'] ?? 0),
+							];
 						}
 					}
 				}
@@ -623,19 +631,40 @@ class acp_controller
 				}
 				else
 				{
-					// Merge fetched tiers into existing map, preserving existing group assignments
-					$existing_map = json_decode($this->config_text->get('patreon_tier_group_map') ?: '{}', true) ?: [];
-					foreach ($tiers as $tid => $title)
-					{
-						if (!isset($existing_map[$tid]))
-						{
-							$existing_map[$tid] = 0;
-						}
-					}
-					$this->config_text->set('patreon_tier_group_map', json_encode($existing_map));
+					$currency = !empty($this->config['patreon_currency']) ? $this->config['patreon_currency'] : 'USD';
 
-					// Store tier labels for display
-					$this->config_text->set('patreon_tier_labels', json_encode($tiers));
+					foreach ($tiers as $tid => $tier_data)
+					{
+						// Check if tier already exists
+						$sql = 'SELECT tier_id FROM ' . $this->patreon_tiers_table . "
+							WHERE tier_id = '" . $this->db->sql_escape($tid) . "'";
+						$check = $this->db->sql_query($sql);
+						$exists = $this->db->sql_fetchrow($check);
+						$this->db->sql_freeresult($check);
+
+						if ($exists)
+						{
+							// Update label and amount, preserve group_id
+							$sql = 'UPDATE ' . $this->patreon_tiers_table . '
+								SET ' . $this->db->sql_build_array('UPDATE', [
+									'tier_label'	=> $tier_data['title'],
+									'amount_cents'	=> $tier_data['amount_cents'],
+									'currency'		=> $currency,
+								]) . "
+								WHERE tier_id = '" . $this->db->sql_escape($tid) . "'";
+						}
+						else
+						{
+							$sql = 'INSERT INTO ' . $this->patreon_tiers_table . ' ' . $this->db->sql_build_array('INSERT', [
+								'tier_id'		=> $tid,
+								'tier_label'	=> $tier_data['title'],
+								'group_id'		=> 0,
+								'amount_cents'	=> $tier_data['amount_cents'],
+								'currency'		=> $currency,
+							]);
+						}
+						$this->db->sql_query($sql);
+					}
 
 					trigger_error($this->language->lang('ACP_BBPATREON_FETCH_TIERS_DONE', count($tiers)) . adm_back_link($this->u_action));
 				}

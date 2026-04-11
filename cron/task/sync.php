@@ -107,7 +107,6 @@ class sync extends \phpbb\cron\task\base
 			$this->upsert_sync(
 				$patreon_user_id,
 				$member['tier_id'],
-				$member['tier_label'],
 				$member['patron_status'] ?: 'pending_link',
 				(int) $member['pledge_cents']
 			);
@@ -185,6 +184,7 @@ class sync extends \phpbb\cron\task\base
 					pledge_cents = 0,
 					last_synced_at = " . time() . "
 				WHERE patreon_user_id = '" . $this->db->sql_escape($orphan_id) . "'";
+
 			$this->db->sql_query($sql_update);
 
 			if (isset($linked_users[$orphan_id]))
@@ -232,7 +232,7 @@ class sync extends \phpbb\cron\task\base
 	/**
 	 * Insert or update the patreon_sync record.
 	 */
-	protected function upsert_sync(string $patreon_user_id, string $tier_id, string $tier_label, string $pledge_status, int $pledge_cents): void
+	protected function upsert_sync(string $patreon_user_id, string $tier_id, string $pledge_status, int $pledge_cents): void
 	{
 		$sql = 'SELECT patreon_user_id FROM ' . $this->patreon_sync_table . "
 			WHERE patreon_user_id = '" . $this->db->sql_escape($patreon_user_id) . "'";
@@ -242,7 +242,6 @@ class sync extends \phpbb\cron\task\base
 
 		$data = [
 			'tier_id'			=> $tier_id,
-			'tier_label'		=> $tier_label,
 			'pledge_status'		=> $pledge_status,
 			'pledge_cents'		=> $pledge_cents,
 			'last_synced_at'	=> time(),
