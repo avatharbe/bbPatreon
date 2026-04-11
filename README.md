@@ -38,11 +38,19 @@ Developed and maintained by [Avathar.be](https://www.avathar.be).
 - Tier name, pledge status (color-coded), pledge amount, assigned forum group, and last sync time
 - Human-readable status labels (Active Patron, Payment Declined, Former Patron, Pending)
 
+**Public supporters page**
+- Public page at `/patreon/supporters` listing opted-in active patrons
+- Shows avatar, username (coloured), rank, group (coloured), tier name, and optionally pledge amount
+- ACP master switch to enable/disable the page and the pledge amount column
+- UCP opt-in checkboxes: "Show me as a supporter" and "Show my pledge amount" — both default off
+- Link in the navbar sandwich menu when enabled
+- Patreon tier badge on the "The Team" page for active patrons
+
 **Administration**
 - "Fetch Campaign ID" button in the ACP (auto-detects from the API)
 - Webhook management: register via API or manually via the Patreon portal, with "Check Status" and "Test Ping" buttons
 - Notification to admins and moderators when a user links their Patreon account
-- Linked users overview in the ACP showing tier, status, pledge amount, and sync timestamps
+- Linked users overview in the ACP showing coloured usernames, tier, status, pledge amount, and sync timestamps
 - Creator access token auto-refresh on expiry
 - Collapsible help text throughout the ACP explaining how each section works
 
@@ -51,14 +59,17 @@ Developed and maintained by [Avathar.be](https://www.avathar.be).
 
 ### Changelog
 - 1.0.0-RC3
-  - Public supporters page at `/patreon/supporters` with opt-in privacy controls (#2)
-  - ACP master switch to enable/disable supporters page (#2)
-  - UCP opt-in checkbox: "Show me as a supporter" with per-user consent (#2)
-  - New migration for `show_public` column and `patreon_supporters_page_enabled` config (#2)
+  - Public supporters page at `/patreon/supporters` with avatar, rank, coloured group, tier (#2)
+  - Optional pledge amount column on supporters page, gated by ACP toggle + UCP opt-in (#2)
+  - Patreon tier badge on "The Team" page for active patrons (#2)
+  - Supporters page link in navbar sandwich menu (#2)
+  - ACP: coloured usernames in linked users table
   - UCP: "Refresh my status" re-sync button with 5-minute rate limit (#3)
-  - UCP: show assigned forum group name, human-readable status labels, last sync time (#3)
+  - UCP: show assigned forum group, human-readable status labels, last sync time (#3)
   - UCP: color-coded pledge status (active/declined/former/pending) (#3)
-  - Unit test suite: 76 tests, 170 assertions covering services, controllers, cron, migrations, auth, and OAuth
+  - UCP: "Show me as a supporter" and "Show my pledge amount" opt-in checkboxes (#2)
+  - Migrations: `show_public`, `show_pledge_public` columns, supporters page config keys
+  - Unit test suite: 76 tests, 172 assertions
   - CI: PHPUnit 9.x on PHP 8.1-8.4 with MySQL, PostgreSQL, and Windows
 - 1.0.0-dev
   - Initial release
