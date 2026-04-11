@@ -44,10 +44,7 @@ class group_mapper_test extends \phpbb_test_case
 	 */
 	protected function get_mapper(array $config_data = array(), array $tier_rows = null)
 	{
-		// Use a non-existent root path to prevent loading phpBB's
-		// functions_user.php (not needed for the methods we test here).
-		$phpbb_root_path = '/dev/null/';
-		$phpEx = 'php';
+		global $phpbb_root_path, $phpEx;
 
 		$defaults = array(
 			'patreon_grace_period_days'	=> 0,
