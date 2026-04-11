@@ -45,6 +45,8 @@ services:
             - '@avathar.bbpatreon.service.group_mapper'
             - '@controller.helper'
             - '%avathar.bbpatreon.tables.patreon_sync%'
+            - '%avathar.bbpatreon.tables.patreon_tiers%'
+            - '%tables.auth_provider_oauth_account_assoc%'
         tags:
             - { name: event.listener }
 

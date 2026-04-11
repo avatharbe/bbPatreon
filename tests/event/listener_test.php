@@ -68,7 +68,9 @@ class listener_test extends \phpbb_test_case
 			$this->api_client,
 			$this->group_mapper,
 			$this->helper,
-			'phpbb_patreon_sync'
+			'phpbb_patreon_sync',
+			'phpbb_patreon_tiers',
+			'phpbb_oauth_accounts'
 		);
 	}
 
@@ -86,8 +88,9 @@ class listener_test extends \phpbb_test_case
 
 		$this->assertArrayHasKey('core.user_setup', $events);
 		$this->assertArrayHasKey('core.page_header', $events);
+		$this->assertArrayHasKey('core.memberlist_team_modify_template_vars', $events);
 		$this->assertArrayHasKey('core.oauth_login_after_check_if_provider_id_has_match', $events);
-		$this->assertCount(3, $events);
+		$this->assertCount(4, $events);
 	}
 
 	/**

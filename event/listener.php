@@ -36,6 +36,15 @@ class listener implements EventSubscriberInterface
 	/** @var string */
 	protected $patreon_sync_table;
 
+	/** @var string */
+	protected $patreon_tiers_table;
+
+	/** @var string */
+	protected $oauth_accounts_table;
+
+	/** @var array|null Cached patron data keyed by user_id */
+	protected $team_patron_data;
+
 	/**
 	 * Constructor.
 	 */
@@ -46,7 +55,9 @@ class listener implements EventSubscriberInterface
 		\avathar\bbpatreon\service\api_client $api_client,
 		\avathar\bbpatreon\service\group_mapper $group_mapper,
 		\phpbb\controller\helper $helper,
-		string $patreon_sync_table
+		string $patreon_sync_table,
+		string $patreon_tiers_table,
+		string $oauth_accounts_table
 	)
 	{
 		$this->config				= $config;
@@ -56,6 +67,8 @@ class listener implements EventSubscriberInterface
 		$this->group_mapper			= $group_mapper;
 		$this->helper				= $helper;
 		$this->patreon_sync_table	= $patreon_sync_table;
+		$this->patreon_tiers_table	= $patreon_tiers_table;
+		$this->oauth_accounts_table	= $oauth_accounts_table;
 	}
 
 	/**
@@ -66,6 +79,7 @@ class listener implements EventSubscriberInterface
 		return [
 			'core.user_setup'	=> 'load_language_on_setup',
 			'core.page_header'	=> 'add_page_header_links',
+			'core.memberlist_team_modify_template_vars'	=> 'add_patreon_to_team',
 			'core.oauth_login_after_check_if_provider_id_has_match'	=> 'on_oauth_login',
 		];
 	}
@@ -109,6 +123,89 @@ class listener implements EventSubscriberInterface
 				'PATREON_SUPPORTERS_COUNT'	=> $count,
 			]);
 		}
+	}
+
+	/**
+	 * Add Patreon tier badge to usernames on the team page.
+	 */
+	public function add_patreon_to_team($event)
+	{
+		if (!$this->config['patreon_supporters_page_enabled'])
+		{
+			return;
+		}
+
+		// Lazy-load all patron data on first call
+		if ($this->team_patron_data === null)
+		{
+			$this->team_patron_data = [];
+
+			$sql = 'SELECT oa.user_id, pt.tier_label, ps.pledge_cents, ps.pledge_status,
+						ps.show_public, ps.show_pledge_public
+				FROM ' . $this->patreon_sync_table . ' ps
+				JOIN ' . $this->oauth_accounts_table . " oa
+					ON (oa.provider = 'patreon' AND oa.oauth_provider_id = ps.patreon_user_id)
+				LEFT JOIN " . $this->patreon_tiers_table . " pt ON (pt.tier_id = ps.tier_id)
+				WHERE ps.pledge_status = 'active_patron'";
+			$result = $this->db->sql_query($sql);
+
+			while ($row = $this->db->sql_fetchrow($result))
+			{
+				$this->team_patron_data[(int) $row['user_id']] = $row;
+			}
+			$this->db->sql_freeresult($result);
+		}
+
+		$row = $event['row'];
+		$user_id = (int) $row['user_id'];
+
+		if (!isset($this->team_patron_data[$user_id]))
+		{
+			return;
+		}
+
+		$patron = $this->team_patron_data[$user_id];
+		$template_vars = $event['template_vars'];
+
+		// Build the badge text
+		$badge_parts = [];
+		if (!empty($patron['tier_label']))
+		{
+			$badge_parts[] = $patron['tier_label'];
+		}
+
+		if (!empty($this->config['patreon_supporters_show_amounts'])
+			&& !empty($patron['show_pledge_public'])
+			&& !empty($patron['show_public'])
+			&& (int) $patron['pledge_cents'] > 0)
+		{
+			$badge_parts[] = $this->format_currency((int) $patron['pledge_cents']);
+		}
+
+		if (!empty($badge_parts))
+		{
+			$template_vars['PATREON_BADGE'] = implode(' — ', $badge_parts);
+		}
+
+		$event['template_vars'] = $template_vars;
+	}
+
+	/**
+	 * Format a pledge amount in cents with the campaign currency symbol.
+	 */
+	protected function format_currency(int $cents): string
+	{
+		$symbols = [
+			'USD' => '$', 'EUR' => '€', 'GBP' => '£', 'CAD' => 'CA$',
+			'AUD' => 'A$', 'NZD' => 'NZ$', 'JPY' => '¥', 'CHF' => 'CHF ',
+			'SEK' => 'kr ', 'NOK' => 'kr ', 'DKK' => 'kr ', 'PLN' => 'zł',
+			'BRL' => 'R$', 'MXN' => 'MX$',
+		];
+
+		$currency = !empty($this->config['patreon_currency']) ? $this->config['patreon_currency'] : 'USD';
+		$symbol = $symbols[$currency] ?? $currency . ' ';
+
+		return $symbol . number_format($cents / 100, 2);
 	}
 
 	/**

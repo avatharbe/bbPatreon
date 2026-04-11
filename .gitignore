@@ -17,3 +17,4 @@ Icon
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
 .claude
+*.cache
