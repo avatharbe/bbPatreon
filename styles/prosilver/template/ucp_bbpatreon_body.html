@@ -2,51 +2,88 @@
 
 <h2>{{ lang('UCP_BBPATREON_TITLE') }}</h2>
 
+{% if S_ERROR %}
 <div class="panel">
 	<div class="inner">
-		{% if S_ERROR %}
-			<p class="error">{{ ERROR_MSG }}</p>
-		{% endif %}
-
-		{% if S_PATREON_LINKED %}
-			<div class="patreon-status">
-				<h3>{{ lang('UCP_BBPATREON_LINKED_STATUS') }}</h3>
-				<dl>
-					<dt>{{ lang('UCP_BBPATREON_PATREON_ID') ~ lang('COLON') }}</dt>
-					<dd>{{ PATREON_USER_ID }}</dd>
-				</dl>
-				{% if PATREON_TIER_LABEL %}
-				<dl>
-					<dt>{{ lang('UCP_BBPATREON_TIER') ~ lang('COLON') }}</dt>
-					<dd>{{ PATREON_TIER_LABEL }}</dd>
-				</dl>
-				{% endif %}
-				<dl>
-					<dt>{{ lang('UCP_BBPATREON_STATUS') ~ lang('COLON') }}</dt>
-					<dd>{{ PATREON_PLEDGE_STATUS }}</dd>
-				</dl>
-				<dl>
-					<dt>{{ lang('UCP_BBPATREON_PLEDGE') ~ lang('COLON') }}</dt>
-					<dd>{{ PATREON_PLEDGE_AMOUNT }}</dd>
-				</dl>
-			</div>
-
-			<form method="post" action="{{ U_UCP_ACTION }}">
-				<fieldset class="submit-buttons">
-					<input class="button2" type="submit" name="unlink" value="{{ lang('UCP_BBPATREON_UNLINK') }}" onclick="return confirm('{{ lang('UCP_BBPATREON_UNLINK_CONFIRM') }}');">
-					{{ S_FORM_TOKEN }}
-				</fieldset>
-			</form>
-		{% else %}
-			<div class="patreon-link">
-				<p>{{ lang('UCP_BBPATREON_NOT_LINKED') }}</p>
-				<form method="post" action="{{ U_UCP_ACTION }}">
-					<input class="button1" type="submit" name="link" value="{{ lang('UCP_BBPATREON_LINK_ACCOUNT') }}">
-					{{ S_FORM_TOKEN }}
-				</form>
-			</div>
-		{% endif %}
+		<p class="error">{{ ERROR_MSG }}</p>
 	</div>
 </div>
+{% endif %}
+
+{% if S_PATREON_LINKED %}
+<div class="panel">
+	<div class="inner">
+	<fieldset>
+		<legend>{{ lang('UCP_BBPATREON_LINKED_STATUS') }}</legend>
+
+		{% if PATREON_TIER_LABEL %}
+		<dl>
+			<dt><label>{{ lang('UCP_BBPATREON_TIER') }}{{ lang('COLON') }}</label></dt>
+			<dd><strong>{{ PATREON_TIER_LABEL }}</strong></dd>
+		</dl>
+		{% endif %}
+
+		<dl>
+			<dt><label>{{ lang('UCP_BBPATREON_STATUS') }}{{ lang('COLON') }}</label></dt>
+			<dd><span class="{{ PATREON_PLEDGE_STATUS_CLASS }}">{{ PATREON_PLEDGE_STATUS }}</span></dd>
+		</dl>
+
+		{% if PATREON_PLEDGE_AMOUNT %}
+		<dl>
+			<dt><label>{{ lang('UCP_BBPATREON_PLEDGE') }}{{ lang('COLON') }}</label></dt>
+			<dd>{{ PATREON_PLEDGE_AMOUNT }}</dd>
+		</dl>
+		{% endif %}
+
+		{% if PATREON_GROUP_NAME %}
+		<dl>
+			<dt><label>{{ lang('UCP_BBPATREON_GROUP') }}{{ lang('COLON') }}</label></dt>
+			<dd>{{ PATREON_GROUP_NAME }}</dd>
+		</dl>
+		{% endif %}
+
+		{% if PATREON_LAST_SYNCED %}
+		<dl>
+			<dt><label>{{ lang('UCP_BBPATREON_LAST_SYNCED') }}{{ lang('COLON') }}</label></dt>
+			<dd>{{ PATREON_LAST_SYNCED }}</dd>
+		</dl>
+		{% endif %}
+
+		<dl>
+			<dt><label>{{ lang('UCP_BBPATREON_PATREON_ID') }}{{ lang('COLON') }}</label></dt>
+			<dd>{{ PATREON_USER_ID }}</dd>
+		</dl>
+	</fieldset>
+	</div>
+</div>
+
+<form method="post" action="{{ U_UCP_ACTION }}">
+	<fieldset class="submit-buttons">
+		<input class="button1" type="submit" name="resync" value="{{ lang('UCP_BBPATREON_RESYNC') }}">
+		<input class="button2" type="submit" name="unlink" value="{{ lang('UCP_BBPATREON_UNLINK') }}" onclick="return confirm('{{ lang('UCP_BBPATREON_UNLINK_CONFIRM') }}');">
+		{{ S_FORM_TOKEN }}
+	</fieldset>
+</form>
+
+{% else %}
+<div class="panel">
+	<div class="inner">
+		<p>{{ lang('UCP_BBPATREON_NOT_LINKED') }}</p>
+		<form method="post" action="{{ U_UCP_ACTION }}">
+			<fieldset class="submit-buttons">
+				<input class="button1" type="submit" name="link" value="{{ lang('UCP_BBPATREON_LINK_ACCOUNT') }}">
+				{{ S_FORM_TOKEN }}
+			</fieldset>
+		</form>
+	</div>
+</div>
+{% endif %}
+
+<style>
+.patreon-active { color: #2e7d32; font-weight: bold; }
+.patreon-declined { color: #c62828; }
+.patreon-former { color: #757575; }
+.patreon-pending { color: #f57c00; }
+</style>
 
 {% include 'ucp_footer.html' %}

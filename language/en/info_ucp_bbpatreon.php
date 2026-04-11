@@ -36,4 +36,15 @@ $lang = array_merge($lang, [
 	'UCP_BBPATREON_LINKED'			=> 'Your Patreon account has been linked successfully!',
 	'UCP_BBPATREON_OAUTH_ERROR'		=> 'Could not connect to Patreon.',
 	'UCP_BBPATREON_ALREADY_LINKED'	=> 'This Patreon account is already linked to a different forum user.',
+
+	'UCP_BBPATREON_GROUP'			=> 'Forum Group',
+	'UCP_BBPATREON_LAST_SYNCED'		=> 'Last Updated',
+	'UCP_BBPATREON_RESYNC'			=> 'Refresh my status',
+	'UCP_BBPATREON_RESYNCED'		=> 'Your Patreon status has been refreshed successfully.',
+	'UCP_BBPATREON_RESYNC_TOO_SOON'	=> 'You can only refresh your status once every 5 minutes. Please try again later.',
+
+	'UCP_BBPATREON_STATUS_ACTIVE_PATRON'	=> 'Active Patron',
+	'UCP_BBPATREON_STATUS_DECLINED_PATRON'	=> 'Payment Declined',
+	'UCP_BBPATREON_STATUS_FORMER_PATRON'	=> 'Former Patron',
+	'UCP_BBPATREON_STATUS_PENDING_LINK'		=> 'Pending',
 ]);

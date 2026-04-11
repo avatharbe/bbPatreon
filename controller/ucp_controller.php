@@ -132,6 +132,12 @@ class ucp_controller
 			return;
 		}
 
+		// Handle re-sync button
+		if ($this->request->is_set_post('resync'))
+		{
+			$errors = $this->handle_resync($user_id, $errors);
+		}
+
 		// Check if account is linked
 		$sql = 'SELECT oauth_provider_id FROM ' . $this->oauth_accounts_table . '
 			WHERE user_id = ' . (int) $user_id . "
@@ -162,6 +168,13 @@ class ucp_controller
 			$this->db->sql_freeresult($result);
 		}
 
+		// Look up assigned group name if linked and has a tier
+		$group_name = '';
+		if ($is_linked && !empty($sync_data['tier_id']))
+		{
+			$group_name = $this->get_assigned_group_name($sync_data['tier_id']);
+		}
+
 		$s_errors = !empty($errors);
 
 		$this->template->assign_vars([
@@ -172,8 +185,11 @@ class ucp_controller
 			'S_PATREON_LINKED'		=> $is_linked,
 			'PATREON_USER_ID'		=> $patreon_user_id,
 			'PATREON_TIER_LABEL'	=> $sync_data['tier_label'] ?? '',
-			'PATREON_PLEDGE_STATUS'	=> $sync_data['pledge_status'] ?? '',
-			'PATREON_PLEDGE_AMOUNT'	=> isset($sync_data['pledge_cents']) ? $this->format_currency((int) $sync_data['pledge_cents']) : $this->format_currency(0),
+			'PATREON_PLEDGE_STATUS'	=> $this->get_status_label($sync_data['pledge_status'] ?? ''),
+			'PATREON_PLEDGE_STATUS_CLASS'	=> $this->get_status_class($sync_data['pledge_status'] ?? ''),
+			'PATREON_PLEDGE_AMOUNT'	=> isset($sync_data['pledge_cents']) && (int) $sync_data['pledge_cents'] > 0 ? $this->format_currency((int) $sync_data['pledge_cents']) : '',
+			'PATREON_GROUP_NAME'	=> $group_name,
+			'PATREON_LAST_SYNCED'	=> !empty($sync_data['last_synced_at']) ? $this->user->format_date((int) $sync_data['last_synced_at']) : '',
 		]);
 	}
 
@@ -397,6 +413,123 @@ class ucp_controller
 		$symbol = $symbols[$currency] ?? $currency . ' ';
 
 		return $symbol . number_format($cents / 100, 2);
+	}
+
+	/**
+	 * Handle the re-sync button: fetch fresh tier data from Patreon and update groups.
+	 * Rate-limited to once per 5 minutes per user.
+	 */
+	protected function handle_resync(int $user_id, array $errors): array
+	{
+		if (!check_form_key('avathar_bbpatreon_ucp'))
+		{
+			$errors[] = $this->language->lang('FORM_INVALID');
+			return $errors;
+		}
+
+		// Check if linked
+		$sql = 'SELECT oauth_provider_id FROM ' . $this->oauth_accounts_table . '
+			WHERE user_id = ' . (int) $user_id . "
+				AND provider = 'patreon'";
+		$result = $this->db->sql_query($sql);
+		$oauth_row = $this->db->sql_fetchrow($result);
+		$this->db->sql_freeresult($result);
+
+		if (!$oauth_row)
+		{
+			$errors[] = $this->language->lang('UCP_BBPATREON_NOT_LINKED');
+			return $errors;
+		}
+
+		$patreon_user_id = $oauth_row['oauth_provider_id'];
+
+		// Rate limit: check last_synced_at
+		$sql = 'SELECT last_synced_at FROM ' . $this->patreon_sync_table . "
+			WHERE patreon_user_id = '" . $this->db->sql_escape($patreon_user_id) . "'";
+		$result = $this->db->sql_query($sql);
+		$sync_row = $this->db->sql_fetchrow($result);
+		$this->db->sql_freeresult($result);
+
+		if ($sync_row && (time() - (int) $sync_row['last_synced_at']) < 300)
+		{
+			$errors[] = $this->language->lang('UCP_BBPATREON_RESYNC_TOO_SOON');
+			return $errors;
+		}
+
+		// Fetch fresh data from Patreon API
+		$members = $this->api_client->get_campaign_members();
+
+		$patron_status = 'pending_link';
+		$tier_id = '';
+		$pledge_cents = 0;
+
+		foreach ($members as $member)
+		{
+			if ($member['patreon_user_id'] === $patreon_user_id)
+			{
+				$patron_status = $member['patron_status'] ?: 'pending_link';
+				$tier_id = $member['tier_id'];
+				$pledge_cents = (int) $member['pledge_cents'];
+				break;
+			}
+		}
+
+		$this->upsert_sync($patreon_user_id, $tier_id, $patron_status, $pledge_cents);
+		$this->group_mapper->sync_user_groups($user_id, $tier_id, $patron_status);
+
+		meta_refresh(3, $this->u_action);
+		$message = $this->language->lang('UCP_BBPATREON_RESYNCED') . '<br><br>' . $this->language->lang('RETURN_UCP', '<a href="' . $this->u_action . '">', '</a>');
+		trigger_error($message);
+
+		return $errors;
+	}
+
+	/**
+	 * Look up the phpBB group name assigned to a tier.
+	 */
+	protected function get_assigned_group_name(string $tier_id): string
+	{
+		$sql = 'SELECT g.group_name
+			FROM ' . $this->patreon_tiers_table . ' pt
+			JOIN ' . GROUPS_TABLE . ' g ON (g.group_id = pt.group_id)
+			WHERE pt.tier_id = \'' . $this->db->sql_escape($tier_id) . '\'
+				AND pt.group_id > 0';
+		$result = $this->db->sql_query($sql);
+		$row = $this->db->sql_fetchrow($result);
+		$this->db->sql_freeresult($result);
+
+		if (!$row)
+		{
+			return '';
+		}
+
+		// phpBB stores group names as language keys for built-in groups
+		return $this->language->is_set('G_' . $row['group_name'])
+			? $this->language->lang('G_' . $row['group_name'])
+			: $row['group_name'];
+	}
+
+	/**
+	 * Get a human-readable label for a pledge status.
+	 */
+	protected function get_status_label(string $status): string
+	{
+		$key = 'UCP_BBPATREON_STATUS_' . strtoupper($status);
+		return $this->language->is_set($key) ? $this->language->lang($key) : $status;
+	}
+
+	/**
+	 * Get a CSS class for a pledge status.
+	 */
+	protected function get_status_class(string $status): string
+	{
+		switch ($status)
+		{
+			case 'active_patron':	return 'patreon-active';
+			case 'declined_patron':	return 'patreon-declined';
+			case 'former_patron':	return 'patreon-former';
+			default:				return 'patreon-pending';
+		}
 	}
 
 	public function set_page_url($u_action)
