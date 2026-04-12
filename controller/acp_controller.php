@@ -649,6 +649,10 @@ class acp_controller
 
 					foreach ($tiers as $tid => $tier_data)
 					{
+						// Sanitize Patreon API output: strip HTML, encode emoji as NCR
+						$tier_title = utf8_encode_ucr(strip_tags($tier_data['title']));
+						$tier_desc = utf8_encode_ucr(strip_tags($tier_data['description']));
+
 						// Check if tier already exists
 						$sql = 'SELECT tier_id FROM ' . $this->patreon_tiers_table . "
 							WHERE tier_id = '" . $this->db->sql_escape($tid) . "'";
@@ -661,8 +665,8 @@ class acp_controller
 							// Update metadata, preserve group_id
 							$sql = 'UPDATE ' . $this->patreon_tiers_table . '
 								SET ' . $this->db->sql_build_array('UPDATE', [
-									'tier_label'	=> $tier_data['title'],
-									'description'	=> $tier_data['description'],
+									'tier_label'	=> $tier_title,
+									'description'	=> $tier_desc,
 									'amount_cents'	=> $tier_data['amount_cents'],
 									'currency'		=> $currency,
 									'patron_count'	=> $tier_data['patron_count'],
@@ -674,8 +678,8 @@ class acp_controller
 						{
 							$sql = 'INSERT INTO ' . $this->patreon_tiers_table . ' ' . $this->db->sql_build_array('INSERT', [
 								'tier_id'		=> $tid,
-								'tier_label'	=> $tier_data['title'],
-								'description'	=> $tier_data['description'],
+								'tier_label'	=> $tier_title,
+								'description'	=> $tier_desc,
 								'group_id'		=> 0,
 								'amount_cents'	=> $tier_data['amount_cents'],
 								'currency'		=> $currency,
