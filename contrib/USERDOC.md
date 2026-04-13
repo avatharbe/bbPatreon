@@ -81,7 +81,7 @@ Click **Submit** to save.
 
 Webhooks allow Patreon to notify your forum in real-time when a patron creates, updates, or cancels a pledge.
 
-- **Webhook Secret:** Auto-filled when you register a webhook. Can also be set manually if you registered the webhook outside the ACP.
+- **Webhook Secret:** find it in you Patreon page (under api section)
 - **Register Webhook:** Click this button to register a webhook endpoint with Patreon. Your forum must be accessible at `https://yourforum.com/patreon/webhook`. The API credentials and Campaign ID must be saved first.
 
 ### Tier to Group Mapping
