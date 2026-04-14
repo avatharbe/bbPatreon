@@ -33,12 +33,13 @@ Before configuring the extension, you need to create an OAuth client on Patreon.
    - **App Name:** Your forum name (e.g. "Avathar Forum")
    - **Description:** Brief description
    - **App Category:** Community
-   - **Redirect URIs:** `https://yourforum.com/ucp.php?mode=login&login=external&oauth_service=patreon`
-     (replace `yourforum.com` with your actual forum URL)
+   - **Redirect URIs:** `https://yourforumurlpath/patreon/callback`
+     
 4. After creating the client, note down:
    - **Client ID**
    - **Client Secret**
-5. On the same page, find the **Creator's Access Token** and **Creator's Refresh Token** — you will need both
+   - **Creator's Access Token**
+   - **Creator's Refresh Token**
 
 ### Find Your Campaign ID
 
