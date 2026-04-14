@@ -28,6 +28,9 @@ Before configuring the extension, you need to create an OAuth client on Patreon.
 ### STEP 1: Create a Patreon API Client
 
 1. Go to [https://www.patreon.com/portal/registration/register-clients](https://www.patreon.com/portal/registration/register-clients)
+
+<img width="2010" height="592" alt="create client1" src="https://github.com/user-attachments/assets/6174c8c3-8b86-4636-88eb-902b4e4efcad" />
+
 2. Click **Create Client**
 3. Fill in:
    - **App Name:** Your forum name (e.g. "Avathar Forum")
