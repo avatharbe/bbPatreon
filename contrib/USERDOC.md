@@ -54,6 +54,7 @@ Before configuring the extension, you need to create an OAuth client on Patreon.
    - Go to your board ACP => Extensions -> Patreon Integration
    - Your Campaign ID can be found by making an API call or by checking the URL when you visit your campaign page in the Patreon creator dashboard. It is the numeric ID in URLs like `https://www.patreon.com/api/oauth2/v2/campaigns/XXXXXXX`.
    - Alternatively, use the Creator Access Token to call: `curl -H "Authorization: Bearer YOUR_CLIENT_ACCESS_TOKEN" https://www.patreon.com/api/oauth2/v2/campaigns` : The `id` field in the json response is your Campaign ID.
+5. Press Submit
 
 ### Find Your Tier IDs
 
