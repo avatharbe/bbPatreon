@@ -25,7 +25,7 @@ Patreon integration for phpBB 3.3. Links Patreon accounts to forum users via OAu
 
 Before configuring the extension, you need to create an OAuth client on Patreon.
 
-### Create a Patreon API Client
+### STEP 1: Create a Patreon API Client
 
 1. Go to [https://www.patreon.com/portal/registration/register-clients](https://www.patreon.com/portal/registration/register-clients)
 2. Click **Create Client**
@@ -41,15 +41,19 @@ Before configuring the extension, you need to create an OAuth client on Patreon.
    - **Creator's Access Token**
    - **Creator's Refresh Token**
 
-### Find Your Campaign ID
+### STEP 2 : Set up phpBB
 
-Your Campaign ID can be found by making an API call or by checking the URL when you visit your campaign page in the Patreon creator dashboard. It is the numeric ID in URLs like `https://www.patreon.com/api/oauth2/v2/campaigns/XXXXXXX`.
-
-Alternatively, use the Creator Access Token to call:
-```
-curl -H "Authorization: Bearer YOUR_TOKEN" https://www.patreon.com/api/oauth2/v2/campaigns
-```
-The `id` field in the response is your Campaign ID.
+1. Go to your board ACP => Extensions -> Patreon Integration
+2. Configure
+   - Client ID
+   - Client Secret
+   - Creator's Access Token
+    - Creator's Refresh Token
+3. Press Submit
+4. Find Your Campaign ID
+   - Go to your board ACP => Extensions -> Patreon Integration
+   - Your Campaign ID can be found by making an API call or by checking the URL when you visit your campaign page in the Patreon creator dashboard. It is the numeric ID in URLs like `https://www.patreon.com/api/oauth2/v2/campaigns/XXXXXXX`.
+   - Alternatively, use the Creator Access Token to call: `curl -H "Authorization: Bearer YOUR_CLIENT_ACCESS_TOKEN" https://www.patreon.com/api/oauth2/v2/campaigns` : The `id` field in the json response is your Campaign ID.
 
 ### Find Your Tier IDs
 
