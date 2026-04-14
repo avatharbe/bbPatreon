@@ -56,6 +56,9 @@ Before configuring the extension, you need to create an OAuth client on Patreon.
    - Alternatively, use the Creator Access Token to call: `curl -H "Authorization: Bearer YOUR_CLIENT_ACCESS_TOKEN" https://www.patreon.com/api/oauth2/v2/campaigns` : The `id` field in the json response is your Campaign ID.
 5. Press Submit
 
+<img width="1838" height="672" alt="API Credentials" src="https://github.com/user-attachments/assets/fbbf980f-d0a7-41f2-b6cd-0a51ce0614a4" />
+
+
 ### Find Your Tier IDs
 
 To map tiers to forum groups, you need the Patreon Tier IDs. These are visible in the API response:
