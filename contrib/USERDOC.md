@@ -62,7 +62,7 @@ Before configuring the extension, you need to create an OAuth client on Patreon.
 <img width="1838" height="672" alt="API Credentials" src="https://github.com/user-attachments/assets/fbbf980f-d0a7-41f2-b6cd-0a51ce0614a4" />
 
 
-### Find Your Tier IDs
+### STEP 3 : Find Your Tier IDs
 
 To map tiers to forum groups, you can simply click the Fetch Tiers button.
 
@@ -130,52 +130,28 @@ Each tier in the `included` array has an `id` and a `title`.
   }
 }
 ```
-<img width="1884" height="1140" alt="Tier Mapping" src="https://github.com/user-attachments/assets/fd398f30-da4d-464f-ae5e-6ead8d6758b6" />
 
-
-
-
-
----
-
-## ACP Configuration
-
-Go to **ACP > Extensions > Patreon Integration > Settings**.
-
-### API Credentials
-
-| Field | Description |
-|---|---|
-| **Client ID** | The OAuth Client ID from the Patreon Developer Portal |
-| **Client Secret** | The OAuth Client Secret |
-| **Creator Access Token** | Your creator access token (used for server-to-server API calls like fetching member data) |
-| **Creator Refresh Token** | Used to automatically refresh the access token when it expires |
-| **Campaign ID** | Your Patreon campaign's numeric ID |
-
-Click **Submit** to save.
-
-### Webhook
-
-Webhooks allow Patreon to notify your forum in real-time when a patron creates, updates, or cancels a pledge.
-
-- **Webhook Secret:** find it in you Patreon page (under api section)
-- **Register Webhook:** Click this button to register a webhook endpoint with Patreon. Your forum must be accessible at `https://yourforum.com/patreon/webhook`. The API credentials and Campaign ID must be saved first.
-
-### Tier to Group Mapping
-
-This is the core feature — mapping Patreon tiers to phpBB usergroups.
-
-1. Click **Add Tier Mapping**
-2. Enter the **Patreon Tier ID** (the numeric ID from the API)
-3. Select the **phpBB Group** to assign patrons of that tier to
-4. Repeat for each tier you want to map
-5. Click **Submit** to save
+To map the Patreon tiers to phpBB usergroups just select the **phpBB user Group** that maps to your tier. 
 
 When a patron links their account or when a pledge event fires, the extension will:
 - Add the user to the group matching their current tier
 - Remove the user from any other patron-mapped groups they no longer belong to
 
 **Grace Period:** The number of days to wait before removing a user from their patron group after they stop pledging. Set to `0` for immediate removal. During the grace period, the user keeps their group membership even though they are no longer an active patron.
+
+
+<img width="1884" height="1140" alt="Tier Mapping" src="https://github.com/user-attachments/assets/fd398f30-da4d-464f-ae5e-6ead8d6758b6" />
+
+### STEP 4 : Setting up Webhooks
+
+Webhooks allow Patreon to notify your forum in real-time when a patron creates, updates, or cancels a pledge. This is an optional step as 
+
+- **Webhook Secret:** find it in you Patreon page (under api section)
+- **Register Webhook:** Click this button to register a webhook endpoint with Patreon. Your forum must be accessible at `https://yourforum.com/patreon/webhook`. The API credentials and Campaign ID must be saved first.
+
+### Tier to Group Mapping
+
+
 
 ### Linked Users
 
