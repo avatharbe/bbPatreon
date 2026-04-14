@@ -64,12 +64,77 @@ Before configuring the extension, you need to create an OAuth client on Patreon.
 
 ### Find Your Tier IDs
 
+To map tiers to forum groups, you can simply click the Fetch Tiers button.
+
+Alternatively these are visible in the API response:
+
+
 To map tiers to forum groups, you need the Patreon Tier IDs. These are visible in the API response:
 ```
-curl -H "Authorization: Bearer YOUR_TOKEN" \
-  "https://www.patreon.com/api/oauth2/v2/campaigns/YOUR_CAMPAIGN_ID?include=tiers&fields[tier]=title,amount_cents"
+curl -g -H "Authorization: Bearer YOUR_CLIENT_TOKEN" "https://www.patreon.com/api/oauth2/v2/campaigns/CAMPAIGNID?include=tiers&fields[tier]=title,amount_cents"
 ```
 Each tier in the `included` array has an `id` and a `title`.
+```
+{
+  "data": {
+    "id": "CAMPAIGNID",
+    "type": "campaign",
+    "attributes": {},
+    "relationships": {
+      "tiers": {
+        "data": [
+          {
+            "id": "TIERID1",
+            "type": "tier"
+          },
+          {
+            "id": "TIERID2",
+            "type": "tier"
+          },
+          {
+            "id": "TIERID3",
+            "type": "tier"
+          }
+        ]
+      }
+    }
+  },
+  "included": [
+    {
+      "id": "TIERID1",
+      "type": "tier",
+      "attributes": {
+        "amount_cents": 0,
+        "title": "Free"
+      }
+    },
+    {
+      "id": "TIERID2",
+      "type": "tier",
+      "attributes": {
+        "amount_cents": 300,
+        "title": "Tier 1 — Adventurer"
+      }
+    },
+    {
+      "id": "TIERID3",
+      "type": "tier",
+      "attributes": {
+        "amount_cents": 600,
+        "title": "Tier 2 — Champion"
+      }
+    }
+  ],
+  "links": {
+    "self": "https://www.patreon.com/api/oauth2/v2/campaigns/CAMPAIGNID"
+  }
+}
+```
+<img width="1884" height="1140" alt="Tier Mapping" src="https://github.com/user-attachments/assets/fd398f30-da4d-464f-ae5e-6ead8d6758b6" />
+
+
+
+
 
 ---
 
