@@ -132,9 +132,12 @@ When a patron links their account or when a pledge event fires, the extension wi
 
 <img width="1884" height="1140" alt="Tier Mapping" src="https://github.com/user-attachments/assets/fd398f30-da4d-464f-ae5e-6ead8d6758b6" />
 
-## STEP 4 : Setting up Webhooks
+## STEP 4 : Setting up Webhooks (optional) 
 
-Webhooks allow Patreon to notify your forum in real-time when a patron creates, updates, or cancels a pledge. This is an optional step. 
+What are Webhooks ? 
+A webhook is a type of event-driven API. Rather than sending information in response to another app's request, a webhook sends information or performs a specific function in response to a trigger — like the time of day, clicking a button, or receiving a form submission. Since the application sending the data initiates the transfer, webhooks are often referred to as "reverse APIs." 
+
+We are using Webhooks to allow Patreon to notify your forum in real-time when a patron creates, updates, or cancels a pledge. 
 
 - **Webhook Secret:** find it in you Patreon page (under api section)
 - **Register Webhook:** Click this button to register a webhook endpoint with Patreon. Your forum must be accessible at `https://yourforum.com/patreon/webhook`. The API credentials and Campaign ID must be saved first.
