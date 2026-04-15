@@ -27,8 +27,11 @@ Before configuring the extension, you need to create an OAuth client on Patreon.
    - **Description:** Brief description
    - **App Category:** Community
    - **Redirect URIs:** `https://yourforumurlpath/patreon/callback`
+  
+   <img width="609" height="1031" alt="filling in client" src="https://github.com/user-attachments/assets/98ffcd47-1587-4bc5-8bf5-80fabec26470" />
+
      
-4. After creating the client, note down:
+5. After creating the client, note down:
    - **Client ID**
    - **Client Secret**
    - **Creator's Access Token**
