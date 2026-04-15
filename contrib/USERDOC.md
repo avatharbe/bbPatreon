@@ -135,7 +135,7 @@ When a patron links their account or when a pledge event fires, the extension wi
 
 <img width="1884" height="1140" alt="Tier Mapping" src="https://github.com/user-attachments/assets/fd398f30-da4d-464f-ae5e-6ead8d6758b6" />
 
-## STEP 4 : Setting up Webhooks (optional) 
+## STEP 4 : Setting up Webhooks (optional as there is a daily cron job) 
 
 What are Webhooks ? 
 A webhook is a type of event-driven API. Rather than sending information in response to another app's request, a webhook sends information or performs a specific function in response to a trigger — like the time of day, clicking a button, or receiving a form submission. Since the application sending the data initiates the transfer, webhooks are often referred to as "reverse APIs." 
