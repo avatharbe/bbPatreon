@@ -13,6 +13,19 @@ namespace avathar\bbpatreon\notification\type;
 
 class patreon_linked extends \phpbb\notification\type\base
 {
+	/** @var \phpbb\user_loader */
+	protected $user_loader;
+
+	/**
+	 * Set user loader
+	 *
+	 * @param \phpbb\user_loader $user_loader
+	 */
+	public function set_user_loader(\phpbb\user_loader $user_loader)
+	{
+		$this->user_loader = $user_loader;
+	}
+
 	/**
 	 * {@inheritdoc}
 	 */

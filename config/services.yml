@@ -126,6 +126,8 @@ services:
         class: avathar\bbpatreon\notification\type\patreon_linked
         shared: false
         parent: notification.type.base
+        calls:
+            - [set_user_loader, ['@user_loader']]
         tags:
             - { name: notification.type }
 
