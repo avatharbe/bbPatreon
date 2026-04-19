@@ -76,11 +76,14 @@ class ext_test extends TestCase
 	}
 
 	/**
-	 * disable_step with false state should disable notifications.
+	 * disable_step with false state should purge and disable notifications.
 	 */
-	public function test_disable_step_disables_notifications()
+	public function test_disable_step_purges_and_disables_notifications()
 	{
 		$notification_manager = $this->createMock(\phpbb\notification\manager::class);
+		$notification_manager->expects($this->once())
+			->method('purge_notifications')
+			->with('avathar.bbpatreon.notification.type.patreon_linked');
 		$notification_manager->expects($this->once())
 			->method('disable_notifications')
 			->with('avathar.bbpatreon.notification.type.patreon_linked');

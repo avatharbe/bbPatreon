@@ -34,8 +34,9 @@ class ext extends \phpbb\extension\base
 	{
 		if ($old_state === false)
 		{
-			$this->container->get('notification_manager')
-				->disable_notifications('avathar.bbpatreon.notification.type.patreon_linked');
+			$notification_manager = $this->container->get('notification_manager');
+			$notification_manager->purge_notifications('avathar.bbpatreon.notification.type.patreon_linked');
+			$notification_manager->disable_notifications('avathar.bbpatreon.notification.type.patreon_linked');
 			return 'notification';
 		}
 
