@@ -27,8 +27,11 @@ Before configuring the extension, you need to create an OAuth client on Patreon.
    - **Description:** Brief description
    - **App Category:** Community
    - **Redirect URIs:** `https://yourforumurlpath/patreon/callback`
+  
+   <img width="609" height="1031" alt="filling in client" src="https://github.com/user-attachments/assets/98ffcd47-1587-4bc5-8bf5-80fabec26470" />
+
      
-4. After creating the client, note down:
+5. After creating the client, note down:
    - **Client ID**
    - **Client Secret**
    - **Creator's Access Token**
@@ -132,7 +135,7 @@ When a patron links their account or when a pledge event fires, the extension wi
 
 <img width="1884" height="1140" alt="Tier Mapping" src="https://github.com/user-attachments/assets/fd398f30-da4d-464f-ae5e-6ead8d6758b6" />
 
-## STEP 4 : Setting up Webhooks (optional) 
+## STEP 4 : Setting up Webhooks (optional as there is a daily cron job) 
 
 What are Webhooks ? 
 A webhook is a type of event-driven API. Rather than sending information in response to another app's request, a webhook sends information or performs a specific function in response to a trigger — like the time of day, clicking a button, or receiving a form submission. Since the application sending the data initiates the transfer, webhooks are often referred to as "reverse APIs." 
