@@ -5,7 +5,7 @@ Patreon integration for phpBB — link patron accounts via OAuth and automatical
 Developed and maintained by [Avathar.be](https://www.avathar.be).
 
 #### Version
-1.0.0-RC3
+1.0.0-RC4
 
 [![Tests](https://github.com/avatharbe/bbpatreon/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/avatharbe/bbpatreon/actions/workflows/tests.yml)
 
@@ -58,7 +58,7 @@ Developed and maintained by [Avathar.be](https://www.avathar.be).
 - Dutch, English, French, German, Portuguese, Spanish
 
 ### Changelog
-- 1.0.0-RC3
+- 1.0.0-RC4
   - Public supporters page at `/patreon/supporters` with avatar, rank, coloured group, tier (#2)
   - Optional pledge amount column on supporters page, gated by ACP toggle + UCP opt-in (#2)
   - Patreon tier badge on "The Team" page for active patrons (#2)
@@ -69,8 +69,8 @@ Developed and maintained by [Avathar.be](https://www.avathar.be).
   - UCP: color-coded pledge status (active/declined/former/pending) (#3)
   - UCP: "Show me as a supporter" and "Show my pledge amount" opt-in checkboxes (#2)
   - Migrations: `show_public`, `show_pledge_public` columns, supporters page config keys
-  - Unit test suite: 76 tests, 172 assertions
   - CI: PHPUnit 9.x on PHP 8.1-8.4 with MySQL, PostgreSQL, and Windows
+  
 - 1.0.0-dev
   - Initial release
   - OAuth 2.0 account linking via custom PHPoAuthLib service (works with `auth_method = db`)

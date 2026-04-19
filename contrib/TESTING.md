@@ -8,6 +8,7 @@
 | `tests/service/api_client_test.php` | Unit | `phpbb_test_case` | Error handling: no token, no campaign, no refresh token |
 | `tests/event/listener_test.php` | Unit | `phpbb_test_case` | Subscribed events, language loading, provider filtering |
 | `tests/controller/webhook_test.php` | Unit | `phpbb_test_case` | HMAC-MD5 signature validation, JSON:API payload parsing |
+| `tests/notification/patreon_linked_test.php` | Unit | `phpbb_test_case` | Notification type: `set_user_loader()`, `get_avatar()`, `get_title()` |
 | `tests/dbal/migration_test.php` | Database | `phpbb_database_test_case` | Migration: table exists, config keys, column types |
 | `tests/functional/acp_test.php` | Functional | `phpbb_functional_test_case` | ACP module loads, form fields present, action buttons |
 | `tests/functional/ucp_test.php` | Functional | `phpbb_functional_test_case` | UCP module loads, link button, webhook route, callback route |
