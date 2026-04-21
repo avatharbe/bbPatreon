@@ -5,7 +5,7 @@ Patreon integration for phpBB — link patron accounts via OAuth and automatical
 Developed and maintained by [Avathar.be](https://www.avathar.be).
 
 #### Version
-1.0.0-RC5
+1.0.0
 
 [![Tests](https://github.com/avatharbe/bbpatreon/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/avatharbe/bbpatreon/actions/workflows/tests.yml)
 
@@ -58,7 +58,7 @@ Developed and maintained by [Avathar.be](https://www.avathar.be).
 - Dutch, English, French, German, Portuguese, Spanish
 
 ### Changelog
-- 1.0.0-RC5
+- 1.0.0
   - [CHG] "Show me as a supporter" option now only available to paying patrons (free-tier users cannot opt in)
   - [CHG] Clarified explain text in all 6 languages: option is reserved for paying patrons
   - [FIX] Purging extension data now cleans up orphan OAuth links from the core `oauth_accounts` table
