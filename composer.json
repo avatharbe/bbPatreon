@@ -3,8 +3,8 @@
     "type": "phpbb-extension",
     "description": "Patreon integration: OAuth account linking, tier-based group sync, webhooks, and cron reconciliation.",
     "homepage": "https://github.com/avatharbe/bbPatreon",
-    "version": "1.0.0-RC4",
-    "time": "2026-04-19",
+    "version": "1.0.0-RC5",
+    "time": "2026-04-21",
     "license": "GPL-2.0-only",
     "authors": [
         {

@@ -45,7 +45,7 @@ $lang = array_merge($lang, [
 
 	'UCP_BBPATREON_PREFERENCES'				=> 'Preferencias',
 	'UCP_BBPATREON_SHOW_PUBLIC'				=> 'Mostrarme como mecenas',
-	'UCP_BBPATREON_SHOW_PUBLIC_EXPLAIN'		=> 'Si está activado, tu nombre de usuario y nivel aparecerán en la página pública de mecenas. Los importes nunca se muestran.',
+	'UCP_BBPATREON_SHOW_PUBLIC_EXPLAIN'		=> 'Si está activado, tu nombre de usuario y nivel aparecerán en la página pública de mecenas. Los importes nunca se muestran. Solo disponible para mecenas de pago.',
 	'UCP_BBPATREON_SHOW_PLEDGE'				=> 'Mostrar mi importe de pledge',
 	'UCP_BBPATREON_SHOW_PLEDGE_EXPLAIN'		=> 'Si está activado, tu importe de pledge será visible en la página de mecenas. Requiere que «Mostrarme como mecenas» esté activado.',
 	'UCP_BBPATREON_PREFERENCES_SAVED'		=> 'Tus preferencias se han guardado.',

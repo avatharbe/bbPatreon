@@ -5,7 +5,7 @@ Patreon integration for phpBB — link patron accounts via OAuth and automatical
 Developed and maintained by [Avathar.be](https://www.avathar.be).
 
 #### Version
-1.0.0-RC4
+1.0.0-RC5
 
 [![Tests](https://github.com/avatharbe/bbpatreon/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/avatharbe/bbpatreon/actions/workflows/tests.yml)
 
@@ -58,31 +58,40 @@ Developed and maintained by [Avathar.be](https://www.avathar.be).
 - Dutch, English, French, German, Portuguese, Spanish
 
 ### Changelog
-- 1.0.0-RC4
-  - Public supporters page at `/patreon/supporters` with avatar, rank, coloured group, tier (#2)
-  - Optional pledge amount column on supporters page, gated by ACP toggle + UCP opt-in (#2)
-  - Patreon tier badge on "The Team" page for active patrons (#2)
-  - Supporters page link in navbar sandwich menu (#2)
-  - ACP: coloured usernames in linked users table
-  - UCP: "Refresh my status" re-sync button with 5-minute rate limit (#3)
-  - UCP: show assigned forum group, human-readable status labels, last sync time (#3)
-  - UCP: color-coded pledge status (active/declined/former/pending) (#3)
-  - UCP: "Show me as a supporter" and "Show my pledge amount" opt-in checkboxes (#2)
-  - Migrations: `show_public`, `show_pledge_public` columns, supporters page config keys
-  - CI: PHPUnit 9.x on PHP 8.1-8.4 with MySQL, PostgreSQL, and Windows
+- 1.0.0-RC5
+  - [CHG] "Show me as a supporter" option now only available to paying patrons (free-tier users cannot opt in)
+  - [CHG] Clarified explain text in all 6 languages: option is reserved for paying patrons
+  - [FIX] Purging extension data now cleans up orphan OAuth links from the core `oauth_accounts` table
+
+1.0.0-RC4
+  - [FIX] Fatal error when rendering "Patreon linked" notifications — missing user_loader injection (#14)
+  - [FIX] Fatal error when disabling extension with unread notification rows — orphaned notifications now purged on disable (#15)
+
+- 1.0.0-RC3
+  - [NEW] Public supporters page at `/patreon/supporters` with avatar, rank, coloured group, tier (#2)
+  - [NEW] Optional pledge amount column on supporters page, gated by ACP toggle + UCP opt-in (#2)
+  - [NEW] Patreon tier badge on "The Team" page for active patrons (#2)
+  - [NEW] Supporters page link in navbar sandwich menu (#2)
+  - [CHG] ACP: coloured usernames in linked users table
+  - [NEW] UCP: "Refresh my status" re-sync button with 5-minute rate limit (#3)
+  - [NEW] UCP: show assigned forum group, human-readable status labels, last sync time (#3)
+  - [NEW] UCP: color-coded pledge status (active/declined/former/pending) (#3)
+  - [NEW] UCP: "Show me as a supporter" and "Show my pledge amount" opt-in checkboxes (#2)
+  - [NEW] Migrations: `show_public`, `show_pledge_public` columns, supporters page config keys
+  - [NEW] CI: PHPUnit 9.x on PHP 8.1-8.4 with MySQL, PostgreSQL, and Windows
   
 - 1.0.0-dev
-  - Initial release
-  - OAuth 2.0 account linking via custom PHPoAuthLib service (works with `auth_method = db`)
-  - Patreon API v2 client with creator token auto-refresh
-  - Tier-to-group mapper with grace period support
-  - Dedicated `patreon_tiers` table for tier metadata and group mapping
-  - Webhook receiver with HMAC-MD5 signature validation
-  - Nightly cron reconciliation task
-  - ACP: API credentials, webhook management, tier mapping, linked users table
-  - UCP: link/unlink Patreon account, view tier and pledge status
-  - Notification type for admin/moderator alerts on account linking
-  - GitHub Actions CI (PHP 8.1-8.4) and EPV validation
+  - [NEW] Initial release
+  - [NEW] OAuth 2.0 account linking via custom PHPoAuthLib service (works with `auth_method = db`)
+  - [NEW] Patreon API v2 client with creator token auto-refresh
+  - [NEW] Tier-to-group mapper with grace period support
+  - [NEW] Dedicated `patreon_tiers` table for tier metadata and group mapping
+  - [NEW] Webhook receiver with HMAC-MD5 signature validation
+  - [NEW] Nightly cron reconciliation task
+  - [NEW] ACP: API credentials, webhook management, tier mapping, linked users table
+  - [NEW] UCP: link/unlink Patreon account, view tier and pledge status
+  - [NEW] Notification type for admin/moderator alerts on account linking
+  - [NEW] GitHub Actions CI (PHP 8.1-8.4) and EPV validation
 
 ### Installation
 1. [Download the latest release](https://github.com/avatharbe/bbpatreon/releases) and unzip it.

@@ -52,6 +52,16 @@ class ext extends \phpbb\extension\base
 			return 'notification';
 		}
 
+		if ($old_state === 'notification')
+		{
+			// Remove orphan OAuth links from the core table — without the
+			// extension's patreon_sync/patreon_tiers tables these are useless.
+			$db = $this->container->get('dbal.conn');
+			$db->sql_query('DELETE FROM ' . $this->container->getParameter('tables.auth_provider_oauth_account_assoc') .
+				" WHERE provider = 'patreon'");
+			return 'oauth_cleanup';
+		}
+
 		return parent::purge_step($old_state);
 	}
 }

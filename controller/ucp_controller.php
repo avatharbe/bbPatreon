@@ -164,8 +164,10 @@ class ucp_controller
 			}
 			else
 			{
-				$show_public = ($this->config['patreon_supporters_page_enabled'] && $this->request->variable('show_public', 0)) ? 1 : 0;
-				$show_pledge = ($this->config['patreon_supporters_show_amounts'] && $this->request->variable('show_pledge_public', 0)) ? 1 : 0;
+				// Only paid-tier patrons can opt in as supporters
+				$is_paid = $this->is_paid_tier($patreon_user_id);
+				$show_public = ($is_paid && $this->config['patreon_supporters_page_enabled'] && $this->request->variable('show_public', 0)) ? 1 : 0;
+				$show_pledge = ($is_paid && $this->config['patreon_supporters_show_amounts'] && $this->request->variable('show_pledge_public', 0)) ? 1 : 0;
 				$sql = 'UPDATE ' . $this->patreon_sync_table . '
 					SET show_public = ' . $show_public . ',
 						show_pledge_public = ' . $show_pledge . "
@@ -182,7 +184,7 @@ class ucp_controller
 		$sync_data = [];
 		if ($is_linked)
 		{
-			$sql = 'SELECT ps.*, pt.tier_label
+			$sql = 'SELECT ps.*, pt.tier_label, pt.amount_cents AS tier_amount_cents
 				FROM ' . $this->patreon_sync_table . ' ps
 				LEFT JOIN ' . $this->patreon_tiers_table . " pt ON (pt.tier_id = ps.tier_id)
 				WHERE ps.patreon_user_id = '" . $this->db->sql_escape($patreon_user_id) . "'";
@@ -213,6 +215,7 @@ class ucp_controller
 			'PATREON_PLEDGE_AMOUNT'	=> isset($sync_data['pledge_cents']) && (int) $sync_data['pledge_cents'] > 0 ? $this->format_currency((int) $sync_data['pledge_cents']) : '',
 			'PATREON_GROUP_NAME'	=> $group_name,
 			'PATREON_LAST_SYNCED'	=> !empty($sync_data['last_synced_at']) ? $this->user->format_date((int) $sync_data['last_synced_at']) : '',
+			'S_PAID_TIER'					=> !empty($sync_data['tier_amount_cents']) && (int) $sync_data['tier_amount_cents'] > 0,
 			'S_SUPPORTERS_PAGE_ENABLED'		=> (bool) $this->config['patreon_supporters_page_enabled'],
 			'S_SHOW_PUBLIC'					=> !empty($sync_data['show_public']),
 			'S_SUPPORTERS_SHOW_AMOUNTS'		=> (bool) $this->config['patreon_supporters_show_amounts'],
@@ -557,6 +560,22 @@ class ucp_controller
 			case 'former_patron':	return 'patreon-former';
 			default:				return 'patreon-pending';
 		}
+	}
+
+	/**
+	 * Check whether the given Patreon user is on a paid tier (amount_cents > 0).
+	 */
+	protected function is_paid_tier(string $patreon_user_id): bool
+	{
+		$sql = 'SELECT pt.amount_cents
+			FROM ' . $this->patreon_sync_table . ' ps
+			JOIN ' . $this->patreon_tiers_table . " pt ON (pt.tier_id = ps.tier_id)
+			WHERE ps.patreon_user_id = '" . $this->db->sql_escape($patreon_user_id) . "'";
+		$result = $this->db->sql_query($sql);
+		$row = $this->db->sql_fetchrow($result);
+		$this->db->sql_freeresult($result);
+
+		return $row && (int) $row['amount_cents'] > 0;
 	}
 
 	public function set_page_url($u_action)

@@ -45,7 +45,7 @@ $lang = array_merge($lang, [
 
 	'UCP_BBPATREON_PREFERENCES'				=> 'Voorkeuren',
 	'UCP_BBPATREON_SHOW_PUBLIC'				=> 'Toon mij als supporter',
-	'UCP_BBPATREON_SHOW_PUBLIC_EXPLAIN'		=> 'Indien ingeschakeld worden je gebruikersnaam en tier getoond op de openbare supporterspagina. Pledgebedragen worden nooit getoond.',
+	'UCP_BBPATREON_SHOW_PUBLIC_EXPLAIN'		=> 'Indien ingeschakeld worden je gebruikersnaam en tier getoond op de openbare supporterspagina. Pledgebedragen worden nooit getoond. Alleen beschikbaar voor betalende patrons.',
 	'UCP_BBPATREON_SHOW_PLEDGE'				=> 'Mijn pledgebedrag tonen',
 	'UCP_BBPATREON_SHOW_PLEDGE_EXPLAIN'		=> 'Indien ingeschakeld wordt je pledgebedrag zichtbaar op de supporterspagina. Vereist dat „Toon mij als supporter" is ingeschakeld.',
 	'UCP_BBPATREON_PREFERENCES_SAVED'		=> 'Je voorkeuren zijn opgeslagen.',

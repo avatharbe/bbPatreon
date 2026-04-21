@@ -45,7 +45,7 @@ $lang = array_merge($lang, [
 
 	'UCP_BBPATREON_PREFERENCES'				=> 'Préférences',
 	'UCP_BBPATREON_SHOW_PUBLIC'				=> 'M\'afficher comme supporter',
-	'UCP_BBPATREON_SHOW_PUBLIC_EXPLAIN'		=> 'Si activé, votre nom d\'utilisateur et votre palier apparaîtront sur la page publique des supporters. Les montants des pledges ne sont jamais affichés.',
+	'UCP_BBPATREON_SHOW_PUBLIC_EXPLAIN'		=> 'Si activé, votre nom d\'utilisateur et votre palier apparaîtront sur la page publique des supporters. Les montants des pledges ne sont jamais affichés. Réservé aux patrons payants.',
 	'UCP_BBPATREON_SHOW_PLEDGE'				=> 'Afficher mon montant de pledge',
 	'UCP_BBPATREON_SHOW_PLEDGE_EXPLAIN'		=> 'Si activé, votre montant de pledge sera visible sur la page des supporters. Nécessite que « M\'afficher comme supporter » soit activé.',
 	'UCP_BBPATREON_PREFERENCES_SAVED'		=> 'Vos préférences ont été enregistrées.',
