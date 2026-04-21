@@ -63,7 +63,7 @@ Developed and maintained by [Avathar.be](https://www.avathar.be).
   - [CHG] Clarified explain text in all 6 languages: option is reserved for paying patrons
   - [FIX] Purging extension data now cleans up orphan OAuth links from the core `oauth_accounts` table
 
-1.0.0-RC4
+- 1.0.0-RC4
   - [FIX] Fatal error when rendering "Patreon linked" notifications — missing user_loader injection (#14)
   - [FIX] Fatal error when disabling extension with unread notification rows — orphaned notifications now purged on disable (#15)
 
