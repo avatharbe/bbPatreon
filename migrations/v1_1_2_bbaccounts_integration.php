@@ -15,11 +15,11 @@ namespace avathar\bbpatreon\migrations;
  * rules that drive bbAccounts integration) and registers the new
  * "bbAccounts Integration" ACP mode. Idempotency keyed on the table.
  */
-class v1_3_0_bbaccounts_integration extends \phpbb\db\migration\migration
+class v1_1_2_bbaccounts_integration extends \phpbb\db\migration\migration
 {
 	public static function depends_on()
 	{
-		return ['\avathar\bbpatreon\migrations\v1_2_0_show_pledge'];
+		return ['\avathar\bbpatreon\migrations\v1_1_1_show_pledge'];
 	}
 
 	public function effectively_installed()

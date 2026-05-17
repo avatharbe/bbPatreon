@@ -18,11 +18,11 @@ namespace avathar\bbpatreon\migrations;
  * demotion. Default OFF — preserves the pre-1.3.3 behaviour of treating
  * tier-mapped membership as a secondary group only. See issue #20.
  */
-class v1_3_3_default_group extends \phpbb\db\migration\migration
+class v1_1_5_default_group extends \phpbb\db\migration\migration
 {
 	public static function depends_on()
 	{
-		return ['\avathar\bbpatreon\migrations\v1_3_2_notification_perm'];
+		return ['\avathar\bbpatreon\migrations\v1_1_4_notification_perm'];
 	}
 
 	public function effectively_installed()

@@ -11,7 +11,7 @@
 
 namespace avathar\bbpatreon\migrations;
 
-class v1_2_0_show_pledge extends \phpbb\db\migration\migration
+class v1_1_1_show_pledge extends \phpbb\db\migration\migration
 {
 	public static function depends_on()
 	{
