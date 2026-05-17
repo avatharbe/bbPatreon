@@ -16,6 +16,12 @@ class patreon_linked extends \phpbb\notification\type\base
 	/** @var \phpbb\user_loader */
 	protected $user_loader;
 
+	/** @var string */
+	protected $patreon_tiers_table;
+
+	/** @var array Per-instance cache of tier_id => tier_label lookups. */
+	protected $tier_label_cache = [];
+
 	/**
 	 * Set user loader
 	 *
@@ -24,6 +30,16 @@ class patreon_linked extends \phpbb\notification\type\base
 	public function set_user_loader(\phpbb\user_loader $user_loader)
 	{
 		$this->user_loader = $user_loader;
+	}
+
+	/**
+	 * Set the patreon_tiers table name (for tier-label lookups in get_reference).
+	 *
+	 * @param string $patreon_tiers_table
+	 */
+	public function set_patreon_tiers_table(string $patreon_tiers_table)
+	{
+		$this->patreon_tiers_table = $patreon_tiers_table;
 	}
 
 	/**
@@ -123,9 +139,49 @@ class patreon_linked extends \phpbb\notification\type\base
 	 */
 	public function get_reference()
 	{
-		return $this->language->lang('NOTIFICATION_PATREON_LINKED_REFERENCE',
-			$this->get_data('tier_id') ?: $this->language->lang('PATREON_NEVER')
-		);
+		$tier_id = (string) $this->get_data('tier_id');
+		if ($tier_id === '')
+		{
+			$label = $this->language->lang('PATREON_NEVER');
+		}
+		else
+		{
+			$label = $this->resolve_tier_label($tier_id);
+		}
+		return $this->language->lang('NOTIFICATION_PATREON_LINKED_REFERENCE', $label);
+	}
+
+	/**
+	 * Look up the human-readable tier label by Patreon tier_id from the
+	 * patreon_tiers table. Falls back to the raw tier_id when the row is
+	 * missing (e.g. tier deleted from the campaign since the patron linked).
+	 * Cached per-instance so multiple get_reference() calls in one render
+	 * hit the DB at most once per tier_id.
+	 *
+	 * @param string $tier_id
+	 * @return string
+	 */
+	protected function resolve_tier_label(string $tier_id): string
+	{
+		if (isset($this->tier_label_cache[$tier_id]))
+		{
+			return $this->tier_label_cache[$tier_id];
+		}
+
+		if (!$this->patreon_tiers_table)
+		{
+			return $tier_id;
+		}
+
+		$sql = 'SELECT tier_label FROM ' . $this->patreon_tiers_table . "
+			WHERE tier_id = '" . $this->db->sql_escape($tier_id) . "'";
+		$result = $this->db->sql_query_limit($sql, 1);
+		$row = $this->db->sql_fetchrow($result);
+		$this->db->sql_freeresult($result);
+
+		$label = ($row && $row['tier_label'] !== '') ? (string) $row['tier_label'] : $tier_id;
+		$this->tier_label_cache[$tier_id] = $label;
+		return $label;
 	}
 
 	/**

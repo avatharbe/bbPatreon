@@ -154,6 +154,7 @@ services:
         parent: notification.type.base
         calls:
             - [set_user_loader, ['@user_loader']]
+            - [set_patreon_tiers_table, ['%avathar.bbpatreon.tables.patreon_tiers%']]
         tags:
             - { name: notification.type }
 
