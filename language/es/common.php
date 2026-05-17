@@ -29,7 +29,7 @@ $lang = array_merge($lang, [
 	'PATREON_SUPPORTERS_PLEDGE'		=> 'Pledge',
 	'PATREON_SUPPORTERS_NONE'		=> 'No hay mecenas para mostrar en este momento.',
 
-	'NOTIFICATION_TYPE_PATREON_LINKED'			=> 'Alguien vincula su cuenta de Patreon',
+	'NOTIFICATION_TYPE_AVATHAR.BBPATREON.NOTIFICATION.TYPE.PATREON_LINKED'	=> 'Alguien vincula su cuenta de Patreon',
 	'NOTIFICATION_PATREON_LINKED'				=> '<strong>%s</strong> ha vinculado su cuenta de Patreon',
 	'NOTIFICATION_PATREON_LINKED_REFERENCE'		=> 'Nivel: %s',
 

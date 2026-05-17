@@ -33,7 +33,7 @@ $lang = array_merge($lang, [
 	'PATREON_SUPPORTERS_NONE'		=> 'Momenteel geen supporters om weer te geven.',
 
 	// Notifications
-	'NOTIFICATION_TYPE_PATREON_LINKED'			=> 'Iemand koppelt zijn Patreon-account',
+	'NOTIFICATION_TYPE_AVATHAR.BBPATREON.NOTIFICATION.TYPE.PATREON_LINKED'	=> 'Iemand koppelt zijn Patreon-account',
 	'NOTIFICATION_PATREON_LINKED'				=> '<strong>%s</strong> heeft zijn Patreon-account gekoppeld',
 	'NOTIFICATION_PATREON_LINKED_REFERENCE'		=> 'Tier: %s',
 
