@@ -115,7 +115,7 @@ class bbaccounts_recorder_test extends \phpbb_test_case
 						&& $lines[1]['credit'] === '500.00'
 						&& $lines[1]['subledger_user_id'] === 42;
 				}),
-				'pledge_period',
+				'auto',
 				1,
 				'avathar.bbpatreon'
 			)

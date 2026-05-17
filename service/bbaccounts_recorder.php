@@ -130,7 +130,7 @@ class bbaccounts_recorder
 						time(),
 						sprintf('Patreon monthly credit (%s) — %s', $rule['rule_label'], $period_ymd),
 						$lines,
-						'pledge_period',
+						'auto',
 						$rule_id,
 						'avathar.bbpatreon'
 					);
