@@ -252,8 +252,14 @@ class bbaccounts_acp_controller
 	protected function validate_rule(string $label, int $expense_id, int $wallet_id, string $rate): array
 	{
 		$errors = [];
-		if ($label === '')        { $errors[] = 'Label cannot be empty.'; }
-		if ((float) $rate <= 0)   { $errors[] = 'Amount per dollar must be greater than zero.'; }
+		if ($label === '')
+		{
+			$errors[] = 'Label cannot be empty.';
+		}
+		if ((float) $rate <= 0)
+		{
+			$errors[] = 'Amount per dollar must be greater than zero.';
+		}
 
 		$sql = 'SELECT account_id, account_type, subledger_type, currency_code, is_active
 			FROM ' . $this->table_prefix . 'bbaccounts_accounts
@@ -274,8 +280,14 @@ class bbaccounts_acp_controller
 		}
 		else
 		{
-			if ($by_id[$expense_id]['account_type'] !== 'expense') { $errors[] = 'Selected expense account is not of type expense.'; }
-			if (!$by_id[$expense_id]['is_active'])                 { $errors[] = 'Selected expense account is inactive.'; }
+			if ($by_id[$expense_id]['account_type'] !== 'expense')
+			{
+				$errors[] = 'Selected expense account is not of type expense.';
+			}
+			if (!$by_id[$expense_id]['is_active'])
+			{
+				$errors[] = 'Selected expense account is inactive.';
+			}
 		}
 		if (!isset($by_id[$wallet_id]))
 		{
@@ -283,8 +295,14 @@ class bbaccounts_acp_controller
 		}
 		else
 		{
-			if ($by_id[$wallet_id]['subledger_type'] !== 'customer') { $errors[] = 'Selected wallet account does not use customer subledger.'; }
-			if (!$by_id[$wallet_id]['is_active'])                    { $errors[] = 'Selected wallet account is inactive.'; }
+			if ($by_id[$wallet_id]['subledger_type'] !== 'customer')
+			{
+				$errors[] = 'Selected wallet account does not use customer subledger.';
+			}
+			if (!$by_id[$wallet_id]['is_active'])
+			{
+				$errors[] = 'Selected wallet account is inactive.';
+			}
 		}
 		if (isset($by_id[$expense_id], $by_id[$wallet_id]) && $by_id[$expense_id]['currency_code'] !== $by_id[$wallet_id]['currency_code'])
 		{
