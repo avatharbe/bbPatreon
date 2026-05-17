@@ -28,6 +28,9 @@ class sync extends \phpbb\cron\task\base
 	/** @var \avathar\bbpatreon\service\group_mapper */
 	protected $group_mapper;
 
+	/** @var \avathar\bbpatreon\service\bbaccounts_recorder */
+	protected $bbaccounts_recorder;
+
 	/** @var string */
 	protected $patreon_sync_table;
 
@@ -43,6 +46,7 @@ class sync extends \phpbb\cron\task\base
 		\phpbb\log\log_interface $log,
 		\avathar\bbpatreon\service\api_client $api_client,
 		\avathar\bbpatreon\service\group_mapper $group_mapper,
+		\avathar\bbpatreon\service\bbaccounts_recorder $bbaccounts_recorder,
 		string $patreon_sync_table,
 		string $oauth_accounts_table
 	)
@@ -52,6 +56,7 @@ class sync extends \phpbb\cron\task\base
 		$this->log					= $log;
 		$this->api_client			= $api_client;
 		$this->group_mapper			= $group_mapper;
+		$this->bbaccounts_recorder	= $bbaccounts_recorder;
 		$this->patreon_sync_table	= $patreon_sync_table;
 		$this->oauth_accounts_table	= $oauth_accounts_table;
 	}
@@ -136,6 +141,16 @@ class sync extends \phpbb\cron\task\base
 			(string) count($members),
 			(string) $synced,
 		]);
+
+		// bbAccounts integration: credit active-pledge patrons for the
+		// current UTC month. Idempotent — repeated cron runs in the
+		// same period are no-ops at the recorder level.
+		if ($this->bbaccounts_recorder->is_available())
+		{
+			$period = gmdate('Y-m');
+			$run    = $this->bbaccounts_recorder->credit_active_patrons_for_period($period);
+			$this->log->add('admin', ANONYMOUS, '', 'LOG_BBPATREON_CREDIT_RUN', false, [$period, (int) $run['credited'], (int) $run['skipped_already_credited']]);
+		}
 	}
 
 	/**

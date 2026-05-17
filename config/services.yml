@@ -164,6 +164,7 @@ services:
             - '@log'
             - '@avathar.bbpatreon.service.api_client'
             - '@avathar.bbpatreon.service.group_mapper'
+            - '@avathar.bbpatreon.service.bbaccounts_recorder'
             - '%avathar.bbpatreon.tables.patreon_sync%'
             - '%tables.auth_provider_oauth_account_assoc%'
         calls:

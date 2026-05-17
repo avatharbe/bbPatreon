@@ -56,12 +56,18 @@ class sync_test extends TestCase
 		$this->db->method('sql_build_array')->willReturn("'dummy'");
 		$this->db->method('sql_in_set')->willReturn('1=1');
 
+		$bbaccounts_recorder = $this->getMockBuilder(\avathar\bbpatreon\service\bbaccounts_recorder::class)
+			->disableOriginalConstructor()
+			->getMock();
+		$bbaccounts_recorder->method('is_available')->willReturn(false);
+
 		return new \avathar\bbpatreon\cron\task\sync(
 			$this->config,
 			$this->db,
 			$this->log,
 			$this->api_client,
 			$this->group_mapper,
+			$bbaccounts_recorder,
 			'phpbb_patreon_sync',
 			'phpbb_oauth_accounts'
 		);
