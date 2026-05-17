@@ -49,4 +49,6 @@ $lang = array_merge($lang, [
 	'LOG_PATREON_WEBHOOK_EVENT'			=> '<strong>Patreon webhook received:</strong> %1$s (status: %2$s, tier: %3$s)',
 	'LOG_PATREON_GROUP_ADD'				=> '<strong>Patreon group promotion:</strong> user ID %1$s added to group ID %2$s',
 	'LOG_PATREON_GROUP_REMOVE'			=> '<strong>Patreon group demotion:</strong> user ID %1$s removed from group ID %2$s',
+	'LOG_BBPATREON_CREDIT_RUN'        => '<strong>bbPatreon</strong> cron credit run for period %1$s: %2$d credited, %3$d skipped',
+	'LOG_BBPATREON_CREDIT_RUN_MANUAL' => '<strong>bbPatreon</strong> manual credit run for period %1$s: %2$d credited, %3$d skipped',
 ]);
