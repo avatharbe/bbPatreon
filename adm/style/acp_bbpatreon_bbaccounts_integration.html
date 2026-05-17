@@ -1,0 +1,122 @@
+<!-- INCLUDE overall_header.html -->
+
+<a id="maincontent"></a>
+
+<h1>{L_ACP_BBPATREON_BBACCOUNTS_INTEGRATION}</h1>
+<p>{L_ACP_BBPATREON_BBACCOUNTS_INTEGRATION_EXPLAIN}</p>
+
+<!-- IF S_BBACCOUNTS_MISSING -->
+	<div class="errorbox"><p>{L_ACP_BBPATREON_BBACCOUNTS_MISSING}</p></div>
+
+<!-- ELSEIF S_FORM -->
+
+	<form id="bbpatreon_rule_form" method="post" action="{U_FORM_ACTION}">
+		<fieldset>
+			<legend><!-- IF S_EDIT -->{L_ACP_BBPATREON_RULE_EDIT}<!-- ELSE -->{L_ACP_BBPATREON_RULE_ADD}<!-- ENDIF --></legend>
+			<dl>
+				<dt><label for="rule_label">{L_ACP_BBPATREON_RULE_LABEL}</label></dt>
+				<dd><input type="text" id="rule_label" name="rule_label" value="{RULE_LABEL}" maxlength="100" required></dd>
+			</dl>
+			<dl>
+				<dt><label for="expense_account_id">{L_ACP_BBPATREON_EXPENSE_ACCOUNT}</label></dt>
+				<dd>
+					<select id="expense_account_id" name="expense_account_id" required>
+						<option value="0">&mdash;</option>
+						<!-- BEGIN expense_options -->
+							<option value="{expense_options.ID}"<!-- IF expense_options.SELECTED --> selected<!-- ENDIF -->>{expense_options.LABEL}</option>
+						<!-- END expense_options -->
+					</select>
+				</dd>
+			</dl>
+			<dl>
+				<dt><label for="wallet_account_id">{L_ACP_BBPATREON_WALLET_ACCOUNT}</label></dt>
+				<dd>
+					<select id="wallet_account_id" name="wallet_account_id" required>
+						<option value="0">&mdash;</option>
+						<!-- BEGIN wallet_options -->
+							<option value="{wallet_options.ID}"<!-- IF wallet_options.SELECTED --> selected<!-- ENDIF -->>{wallet_options.LABEL}</option>
+						<!-- END wallet_options -->
+					</select>
+				</dd>
+			</dl>
+			<dl>
+				<dt><label for="amount_per_dollar">{L_ACP_BBPATREON_AMOUNT_PER_DOLLAR}</label></dt>
+				<dd><input type="number" id="amount_per_dollar" name="amount_per_dollar" value="{AMOUNT_PER_DOLLAR}" min="0.01" step="0.01" required></dd>
+			</dl>
+			<dl>
+				<dt><label for="is_active">{L_ACP_BBPATREON_RULE_ACTIVE}</label></dt>
+				<dd><input type="checkbox" id="is_active" name="is_active" value="1"<!-- IF IS_ACTIVE --> checked<!-- ENDIF -->></dd>
+			</dl>
+			<p class="submit-buttons">
+				<input type="hidden" name="rule_id" value="{RULE_ID}">
+				<input class="button1" type="submit" value="{L_SUBMIT}">
+				<a class="button2" href="{U_BACK}">{L_CANCEL}</a>
+			</p>
+			{S_FORM_TOKEN}
+		</fieldset>
+	</form>
+
+<!-- ELSE -->
+
+	<p><a class="button1" href="{U_ADD}">{L_ACP_BBPATREON_RULE_ADD}</a></p>
+
+	<table class="table1 zebra-table">
+		<thead>
+			<tr>
+				<th>{L_ACP_BBPATREON_RULE_LABEL}</th>
+				<th>{L_ACP_BBPATREON_EXPENSE_ACCOUNT}</th>
+				<th>{L_ACP_BBPATREON_WALLET_ACCOUNT}</th>
+				<th>{L_ACP_BBPATREON_CURRENCY}</th>
+				<th>{L_ACP_BBPATREON_AMOUNT_PER_DOLLAR}</th>
+				<th>{L_ACP_BBPATREON_RULE_ACTIVE}</th>
+				<th>{L_ACTION}</th>
+			</tr>
+		</thead>
+		<tbody>
+			<!-- BEGIN rules -->
+			<tr>
+				<td>{rules.LABEL}</td>
+				<td>{rules.EXPENSE}</td>
+				<td>{rules.WALLET}</td>
+				<td>{rules.CURRENCY}</td>
+				<td style="text-align:right">{rules.RATE}</td>
+				<td><!-- IF rules.IS_ACTIVE -->&#x2713;<!-- ELSE -->&mdash;<!-- ENDIF --></td>
+				<td>
+					<a href="{rules.U_EDIT}">{L_EDIT}</a> |
+					<a href="{rules.U_TOGGLE}">{L_ACP_BBPATREON_RULE_TOGGLE}</a> |
+					<a href="{rules.U_DELETE}" data-ajax="false" onclick="return confirm('{L_CONFIRM_OPERATION}');">{L_DELETE}</a>
+				</td>
+			</tr>
+			<!-- BEGINELSE -->
+			<tr><td colspan="7"><em>{L_ACP_BBPATREON_NO_RULES}</em></td></tr>
+			<!-- END rules -->
+		</tbody>
+	</table>
+
+	<!-- IF S_RUN_CREDIT_FORM -->
+		<h2>{L_ACP_BBPATREON_RUN_CREDIT}</h2>
+		<p>{L_ACP_BBPATREON_RUN_CREDIT_EXPLAIN}</p>
+
+		<!-- IF S_RUN_RESULT -->
+			<div class="successbox">
+				<p>{L_ACP_BBPATREON_RUN_RESULT} {RUN_PERIOD} &mdash; {L_ACP_BBPATREON_RUN_CREDITED}: {RUN_CREDITED}, {L_ACP_BBPATREON_RUN_SKIPPED}: {RUN_SKIPPED}, {L_ACP_BBPATREON_RUN_ERRORS}: {RUN_ERRORS}</p>
+			</div>
+		<!-- ENDIF -->
+
+		<form id="bbpatreon_run_credit" method="post" action="{U_ACTION}&amp;action=run_credit">
+			<fieldset>
+				<dl>
+					<dt><label for="period">{L_ACP_BBPATREON_RUN_PERIOD}</label></dt>
+					<dd><input type="month" id="period" name="period" value="{RUN_CREDIT_PERIOD}" required></dd>
+				</dl>
+				<p class="submit-buttons">
+					<input class="button1" type="submit" value="{L_ACP_BBPATREON_RUN_CREDIT_BUTTON}" onclick="return confirm('{L_ACP_BBPATREON_RUN_CREDIT_CONFIRM}');">
+				</p>
+				{S_FORM_TOKEN}
+			</fieldset>
+		</form>
+	<!-- ENDIF -->
+
+<!-- ENDIF -->
+
+<!-- INCLUDE overall_footer.html -->
