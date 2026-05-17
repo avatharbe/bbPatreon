@@ -75,26 +75,15 @@ class patreon_linked extends \phpbb\notification\type\base
 			'ignore_users'	=> [],
 		], $options);
 
-		// Notify all admins and global moderators
-		$admin_ary = $this->auth->acl_get_list(false, 'a_', false);
-		$mod_ary = $this->auth->acl_get_list(false, 'm_', false);
+		// Gated by the dedicated u_patreon_notify perm (default-granted to
+		// ROLE_ADMIN_FULL only — admins can grant to mod roles or specific
+		// groups via the ACP). See issue #19.
+		$notify_ary = $this->auth->acl_get_list(false, 'u_patreon_notify', false);
 
 		$user_ids = [];
-
-		if (!empty($admin_ary))
+		if (!empty($notify_ary))
 		{
-			foreach ($admin_ary as $forum_users)
-			{
-				foreach ($forum_users as $users)
-				{
-					$user_ids = array_merge($user_ids, $users);
-				}
-			}
-		}
-
-		if (!empty($mod_ary))
-		{
-			foreach ($mod_ary as $forum_users)
+			foreach ($notify_ary as $forum_users)
 			{
 				foreach ($forum_users as $users)
 				{

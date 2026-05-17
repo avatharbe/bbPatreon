@@ -81,7 +81,23 @@ class listener implements EventSubscriberInterface
 			'core.page_header'	=> 'add_page_header_links',
 			'core.memberlist_team_modify_template_vars'	=> 'add_patreon_to_team',
 			'core.oauth_login_after_check_if_provider_id_has_match'	=> 'on_oauth_login',
+			'core.permissions'	=> 'on_permissions',
 		];
+	}
+
+	/**
+	 * Register bbpatreon permissions with phpBB's permission MASK UI so
+	 * admins can grant them via the role/group/user tabs. Without this
+	 * hook the perm exists in phpbb_acl_options (added by the migration)
+	 * but the ACP shows no row to grant it.
+	 *
+	 * @param \phpbb\event\data $event
+	 */
+	public function on_permissions($event)
+	{
+		$permissions = $event['permissions'];
+		$permissions['u_patreon_notify'] = ['lang' => 'ACL_U_PATREON_NOTIFY', 'cat' => 'misc'];
+		$event['permissions'] = $permissions;
 	}
 
 	/**
