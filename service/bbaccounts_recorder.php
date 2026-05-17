@@ -32,17 +32,22 @@ class bbaccounts_recorder
 	/** @var string */
 	protected $table_prefix;
 
+	/** @var string */
+	protected $oauth_accounts_table;
+
 	public function __construct(
 		$ledger,
 		\phpbb\db\driver\driver_interface $db,
 		\phpbb\log\log_interface $log,
-		string $table_prefix
+		string $table_prefix,
+		string $oauth_accounts_table
 	)
 	{
-		$this->ledger       = $ledger;
-		$this->db           = $db;
-		$this->log          = $log;
-		$this->table_prefix = $table_prefix;
+		$this->ledger               = $ledger;
+		$this->db                   = $db;
+		$this->log                  = $log;
+		$this->table_prefix         = $table_prefix;
+		$this->oauth_accounts_table = $oauth_accounts_table;
 	}
 
 	public function is_available(): bool
@@ -140,11 +145,20 @@ class bbaccounts_recorder
 
 	protected function load_active_pledge_patrons(): array
 	{
-		$sql = "SELECT user_id, pledge_cents
-			FROM " . $this->table_prefix . "patreon_sync
-			WHERE user_id > 0
-				AND pledge_cents > 0
-				AND pledge_status IN ('active_patron', 'declined_patron')";
+		// patreon_sync.patreon_user_id is the Patreon external ID; the
+		// link to the phpBB user_id lives in core's oauth_accounts table
+		// (provider='patreon', oauth_provider_id = patreon_user_id).
+		// Unlinked patrons (creator-side known via API sync but never
+		// OAuth'd into the forum) are intentionally excluded — without a
+		// phpBB user_id we have no subledger to credit.
+		$sql = "SELECT oa.user_id AS user_id, s.pledge_cents AS pledge_cents
+			FROM " . $this->table_prefix . "patreon_sync s
+			INNER JOIN " . $this->oauth_accounts_table . " oa
+				ON oa.provider = 'patreon'
+				AND oa.oauth_provider_id = s.patreon_user_id
+			WHERE oa.user_id > 0
+				AND s.pledge_cents > 0
+				AND s.pledge_status IN ('active_patron', 'declined_patron')";
 		$result = $this->db->sql_query($sql);
 		$rows = $this->db->sql_fetchrowset($result);
 		$this->db->sql_freeresult($result);

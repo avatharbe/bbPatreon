@@ -43,6 +43,7 @@ services:
             - '@dbal.conn'
             - '@log'
             - '%core.table_prefix%'
+            - '%tables.auth_provider_oauth_account_assoc%'
 
     # Event listener
     avathar.bbpatreon.listener:

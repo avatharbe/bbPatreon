@@ -40,7 +40,8 @@ class bbaccounts_recorder_test extends \phpbb_test_case
 			$ledger_or_null,
 			$this->db,
 			$this->log,
-			'phpbb_'
+			'phpbb_',
+			'phpbb_oauth_accounts'
 		);
 	}
 

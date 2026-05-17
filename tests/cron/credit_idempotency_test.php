@@ -65,7 +65,7 @@ class credit_idempotency_test extends \phpbb_test_case
 			return isset($existing_refs[$ref]) ? 'existing' : false;
 		});
 
-		$recorder = new \avathar\bbpatreon\service\bbaccounts_recorder($ledger, $db, $log, 'phpbb_');
+		$recorder = new \avathar\bbpatreon\service\bbaccounts_recorder($ledger, $db, $log, 'phpbb_', 'phpbb_oauth_accounts');
 
 		$result1 = $recorder->credit_active_patrons_for_period('2026-05');
 		$this->assertSame(2, $result1['credited'], 'first run should credit both patrons');
