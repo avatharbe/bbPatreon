@@ -91,6 +91,20 @@ services:
             - '%avathar.bbpatreon.tables.patreon_tiers%'
             - '%tables.auth_provider_oauth_account_assoc%'
 
+    # ACP controller for the "bbAccounts Integration" mode
+    avathar.bbpatreon.controller.bbaccounts_acp:
+        class: avathar\bbpatreon\controller\bbaccounts_acp_controller
+        arguments:
+            - '@dbal.conn'
+            - '@language'
+            - '@log'
+            - '@request'
+            - '@template'
+            - '@user'
+            - '@avathar.bbpatreon.service.bbaccounts_recorder'
+            - '%avathar.bbpatreon.tables.bbpatreon_credit_rules%'
+            - '%core.table_prefix%'
+
     # UCP controller
     avathar.bbpatreon.controller.ucp:
         class: avathar\bbpatreon\controller\ucp_controller
