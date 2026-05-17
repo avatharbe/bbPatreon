@@ -123,7 +123,7 @@ class group_mapper
 			{
 				if ((int) $group_id !== $target_group_id && $this->user_in_group($user_id, (int) $group_id))
 				{
-					group_user_del((int) $group_id, [$user_id]);
+					$this->safe_group_user_del($user_id, (int) $group_id);
 				}
 			}
 
@@ -135,6 +135,14 @@ class group_mapper
 					(string) $user_id,
 					(string) $target_group_id,
 				]);
+			}
+
+			// Optionally set the tier-mapped group as the patron's default
+			// (so their username takes the group's colour / rank). Issue #20.
+			if (!empty($this->config['bbpatreon_set_default_group'])
+				&& $this->get_user_default_group($user_id) !== $target_group_id)
+			{
+				group_user_attributes('default', $target_group_id, false, false, false, [$user_id]);
 			}
 		}
 		else
@@ -157,7 +165,7 @@ class group_mapper
 		{
 			if ($this->user_in_group($user_id, (int) $group_id))
 			{
-				group_user_del((int) $group_id, [$user_id]);
+				$this->safe_group_user_del($user_id, (int) $group_id);
 				$this->log->add('admin', ANONYMOUS, '', 'LOG_PATREON_GROUP_REMOVE', false, [
 					(string) $user_id,
 					(string) $group_id,
@@ -183,5 +191,59 @@ class group_mapper
 		$this->db->sql_freeresult($result);
 
 		return $row !== false;
+	}
+
+	/**
+	 * Remove a user from a group, but first reset their default group to
+	 * REGISTERED if the group being removed is their current default AND
+	 * the bbpatreon_set_default_group toggle is on. Avoids leaving the
+	 * user with an invalid default group_id.
+	 */
+	protected function safe_group_user_del(int $user_id, int $group_id): void
+	{
+		if (!empty($this->config['bbpatreon_set_default_group'])
+			&& $this->get_user_default_group($user_id) === $group_id)
+		{
+			$registered = $this->get_registered_group_id();
+			if ($registered > 0)
+			{
+				group_user_attributes('default', $registered, false, false, false, [$user_id]);
+			}
+		}
+		group_user_del($group_id, [$user_id]);
+	}
+
+	/**
+	 * Return the user's current default group_id (phpbb_users.group_id).
+	 */
+	protected function get_user_default_group(int $user_id): int
+	{
+		$sql = 'SELECT group_id FROM ' . USERS_TABLE . '
+			WHERE user_id = ' . $user_id;
+		$result = $this->db->sql_query($sql);
+		$row = $this->db->sql_fetchrow($result);
+		$this->db->sql_freeresult($result);
+		return $row ? (int) $row['group_id'] : 0;
+	}
+
+	/** @var int|null Cached REGISTERED group id (looked up lazily on first use). */
+	protected $registered_group_id_cache = null;
+
+	/**
+	 * Look up the group_id of the 'REGISTERED' group; cached per-instance.
+	 * Returns 0 if not found (shouldn't happen in a healthy phpBB install).
+	 */
+	protected function get_registered_group_id(): int
+	{
+		if ($this->registered_group_id_cache !== null)
+		{
+			return $this->registered_group_id_cache;
+		}
+		$sql = "SELECT group_id FROM " . GROUPS_TABLE . " WHERE group_name = 'REGISTERED'";
+		$result = $this->db->sql_query($sql);
+		$row = $this->db->sql_fetchrow($result);
+		$this->db->sql_freeresult($result);
+		$this->registered_group_id_cache = $row ? (int) $row['group_id'] : 0;
+		return $this->registered_group_id_cache;
 	}
 }

@@ -162,6 +162,12 @@
 		</dl>
 
 		<dl>
+			<dt><label for="bbpatreon_set_default_group">{{ lang('ACP_BBPATREON_SET_DEFAULT_GROUP') ~ lang('COLON') }}</label><br>
+				<span>{{ lang('ACP_BBPATREON_SET_DEFAULT_GROUP_EXPLAIN') }}</span></dt>
+			<dd><label><input type="checkbox" id="bbpatreon_set_default_group" name="bbpatreon_set_default_group" value="1"{% if PATREON_SET_DEFAULT_GROUP %} checked="checked"{% endif %}> {{ lang('ENABLED') }}</label></dd>
+		</dl>
+
+		<dl>
 			<dt><label for="patreon_supporters_page_enabled">{{ lang('ACP_BBPATREON_SUPPORTERS_PAGE') ~ lang('COLON') }}</label><br>
 				<span>{{ lang('ACP_BBPATREON_SUPPORTERS_PAGE_EXPLAIN') }}</span></dt>
 			<dd><label><input type="checkbox" id="patreon_supporters_page_enabled" name="patreon_supporters_page_enabled" value="1"{% if PATREON_SUPPORTERS_PAGE_ENABLED %} checked="checked"{% endif %}> {{ lang('ENABLED') }}</label></dd>

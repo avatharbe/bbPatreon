@@ -151,6 +151,7 @@ class acp_controller
 			'PATREON_CAMPAIGN_ID'			=> $this->config['patreon_campaign_id'],
 			'PATREON_WEBHOOK_SECRET'		=> $this->config['patreon_webhook_secret'],
 			'PATREON_GRACE_PERIOD_DAYS'		=> (int) $this->config['patreon_grace_period_days'],
+			'PATREON_SET_DEFAULT_GROUP'		=> (bool) ($this->config['bbpatreon_set_default_group'] ?? 0),
 			'PATREON_SUPPORTERS_PAGE_ENABLED'	=> (int) $this->config['patreon_supporters_page_enabled'],
 			'PATREON_SUPPORTERS_SHOW_AMOUNTS'	=> (int) $this->config['patreon_supporters_show_amounts'],
 			'PATREON_LAST_SYNC'				=> $this->config['patreon_last_cron_sync'] ? $this->user->format_date((int) $this->config['patreon_last_cron_sync']) : $this->language->lang('PATREON_NEVER'),
@@ -210,6 +211,7 @@ class acp_controller
 		$this->config->set('patreon_campaign_id', $this->request->variable('patreon_campaign_id', ''));
 		$this->config->set('patreon_webhook_secret', $this->request->variable('patreon_webhook_secret', ''));
 		$this->config->set('patreon_grace_period_days', $this->request->variable('patreon_grace_period_days', 0));
+		$this->config->set('bbpatreon_set_default_group', $this->request->variable('bbpatreon_set_default_group', 0));
 		$this->config->set('patreon_supporters_page_enabled', $this->request->variable('patreon_supporters_page_enabled', 0));
 		$this->config->set('patreon_supporters_show_amounts', $this->request->variable('patreon_supporters_show_amounts', 0));
 
