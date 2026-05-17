@@ -44,6 +44,7 @@ services:
             - '@log'
             - '%core.table_prefix%'
             - '%tables.auth_provider_oauth_account_assoc%'
+            - '%avathar.bbpatreon.tables.bbpatreon_credit_log%'
 
     # Event listener
     avathar.bbpatreon.listener:

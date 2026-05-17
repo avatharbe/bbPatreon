@@ -41,7 +41,8 @@ class bbaccounts_recorder_test extends \phpbb_test_case
 			$this->db,
 			$this->log,
 			'phpbb_',
-			'phpbb_oauth_accounts'
+			'phpbb_oauth_accounts',
+			'phpbb_bbpatreon_credit_log'
 		);
 	}
 
@@ -80,7 +81,11 @@ class bbaccounts_recorder_test extends \phpbb_test_case
 
 	public function test_one_rule_one_patron_creates_one_entry(): void
 	{
-		$this->db->method('sql_query')->willReturnOnConsecutiveCalls('rules_result', 'patrons_result');
+		$this->db->method('sql_query')->willReturnCallback(function ($sql) {
+			if (strpos($sql, 'bbpatreon_credit_rules') !== false) return 'rules_result';
+			if (strpos($sql, 'patreon_sync') !== false)           return 'patrons_result';
+			return 'insert_result';
+		});
 		$this->db->method('sql_query_limit')->willReturn('idem_result');
 		$this->db->method('sql_fetchrowset')->willReturnCallback(function ($handle) {
 			if ($handle === 'rules_result')
@@ -95,18 +100,26 @@ class bbaccounts_recorder_test extends \phpbb_test_case
 		});
 		$this->db->method('sql_fetchfield')->willReturn(false);
 		$this->db->method('sql_escape')->willReturnArgument(0);
+		$this->db->method('sql_build_array')->willReturn(' (mock_columns) VALUES (mock_values)');
 
 		$this->ledger->expects($this->once())
 			->method('create_entry')
-			->with($this->callback(function ($entry) {
-				return $entry['reference_source'] === 'avathar.bbpatreon'
-					&& $entry['reference_type']   === 'pledge_period'
-					&& $entry['reference_id']     === '1-42-2026-05'
-					&& count($entry['lines']) === 2
-					&& $entry['lines'][0]['account_id'] === 6
-					&& $entry['lines'][1]['account_id'] === 2
-					&& $entry['lines'][1]['subledger_user_id'] === 42;
-			}));
+			->with(
+				$this->isType('int'),
+				$this->stringContains('Patreon monthly credit (Forum POINTS)'),
+				$this->callback(function ($lines) {
+					return count($lines) === 2
+						&& $lines[0]['account_id'] === 6
+						&& $lines[0]['debit'] === '500.00'
+						&& $lines[1]['account_id'] === 2
+						&& $lines[1]['credit'] === '500.00'
+						&& $lines[1]['subledger_user_id'] === 42;
+				}),
+				'pledge_period',
+				1,
+				'avathar.bbpatreon'
+			)
+			->willReturn(999);
 
 		$rec = $this->get_recorder();
 		$result = $rec->credit_active_patrons_for_period('2026-05');
@@ -114,9 +127,13 @@ class bbaccounts_recorder_test extends \phpbb_test_case
 		$this->assertSame(0, $result['skipped_already_credited']);
 	}
 
-	public function test_existing_journal_entry_skips(): void
+	public function test_existing_credit_log_entry_skips(): void
 	{
-		$this->db->method('sql_query')->willReturnOnConsecutiveCalls('rules_result', 'patrons_result');
+		$this->db->method('sql_query')->willReturnCallback(function ($sql) {
+			if (strpos($sql, 'bbpatreon_credit_rules') !== false) return 'rules_result';
+			if (strpos($sql, 'patreon_sync') !== false)           return 'patrons_result';
+			return 'other';
+		});
 		$this->db->method('sql_query_limit')->willReturn('idem_result');
 		$this->db->method('sql_fetchrowset')->willReturnCallback(function ($handle) {
 			if ($handle === 'rules_result')
@@ -129,6 +146,7 @@ class bbaccounts_recorder_test extends \phpbb_test_case
 			}
 			return [];
 		});
+		// sql_fetchfield returns the existing log_id — credit_log row already there.
 		$this->db->method('sql_fetchfield')->willReturn('999');
 		$this->db->method('sql_escape')->willReturnArgument(0);
 
@@ -142,7 +160,11 @@ class bbaccounts_recorder_test extends \phpbb_test_case
 
 	public function test_ledger_exception_continues_batch(): void
 	{
-		$this->db->method('sql_query')->willReturnOnConsecutiveCalls('rules_result', 'patrons_result');
+		$this->db->method('sql_query')->willReturnCallback(function ($sql) {
+			if (strpos($sql, 'bbpatreon_credit_rules') !== false) return 'rules_result';
+			if (strpos($sql, 'patreon_sync') !== false)           return 'patrons_result';
+			return 'insert_result';
+		});
 		$this->db->method('sql_query_limit')->willReturn('idem_result');
 		$this->db->method('sql_fetchrowset')->willReturnCallback(function ($handle) {
 			if ($handle === 'rules_result')
@@ -157,6 +179,7 @@ class bbaccounts_recorder_test extends \phpbb_test_case
 		});
 		$this->db->method('sql_fetchfield')->willReturn(false);
 		$this->db->method('sql_escape')->willReturnArgument(0);
+		$this->db->method('sql_build_array')->willReturn(' (mock_columns) VALUES (mock_values)');
 
 		$call_count = 0;
 		$this->ledger->method('create_entry')->willReturnCallback(function () use (&$call_count) {
@@ -165,7 +188,7 @@ class bbaccounts_recorder_test extends \phpbb_test_case
 			{
 				throw new \RuntimeException('synthetic');
 			}
-			return 42;
+			return 999;
 		});
 
 		$rec = $this->get_recorder();

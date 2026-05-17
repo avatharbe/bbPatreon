@@ -13,8 +13,12 @@ namespace avathar\bbpatreon\service;
 
 /**
  * Posts one journal entry per active-pledge patron per active rule per
- * calendar month. Idempotent via the composite reference triple
- * (source/type/id) — a second call for the same period is a no-op.
+ * calendar month. Idempotency follows the outbox pattern: bbpatreon
+ * owns a local credit_log table with UNIQUE KEY (rule_id, user_id,
+ * period) and a journal_id back-link to the bbAccounts entry. Before
+ * posting a journal, the recorder checks credit_log; on successful
+ * create_entry it writes the credit_log row. A second run for the
+ * same (rule, patron, period) finds the row and short-circuits.
  * Soft-coupled: when the bbAccounts ledger service is absent, every
  * method short-circuits.
  */
@@ -35,12 +39,16 @@ class bbaccounts_recorder
 	/** @var string */
 	protected $oauth_accounts_table;
 
+	/** @var string */
+	protected $credit_log_table;
+
 	public function __construct(
 		$ledger,
 		\phpbb\db\driver\driver_interface $db,
 		\phpbb\log\log_interface $log,
 		string $table_prefix,
-		string $oauth_accounts_table
+		string $oauth_accounts_table,
+		string $credit_log_table
 	)
 	{
 		$this->ledger               = $ledger;
@@ -48,6 +56,7 @@ class bbaccounts_recorder
 		$this->log                  = $log;
 		$this->table_prefix         = $table_prefix;
 		$this->oauth_accounts_table = $oauth_accounts_table;
+		$this->credit_log_table     = $credit_log_table;
 	}
 
 	public function is_available(): bool
@@ -86,9 +95,10 @@ class bbaccounts_recorder
 		{
 			foreach ($patrons as $patron)
 			{
-				$reference_id = sprintf('%d-%d-%s', (int) $rule['rule_id'], (int) $patron['user_id'], $period_ymd);
+				$rule_id = (int) $rule['rule_id'];
+				$user_id = (int) $patron['user_id'];
 
-				if ($this->journal_entry_exists($reference_id))
+				if ($this->credit_log_entry_exists($rule_id, $user_id, $period_ymd))
 				{
 					$result['skipped_already_credited']++;
 					continue;
@@ -100,28 +110,40 @@ class bbaccounts_recorder
 					2
 				);
 
-				$entry = [
-					'entry_date'       => time(),
-					'description'      => sprintf('Patreon monthly credit (%s) — %s', $rule['rule_label'], $period_ymd),
-					'reference_source' => 'avathar.bbpatreon',
-					'reference_type'   => 'pledge_period',
-					'reference_id'     => $reference_id,
-					'lines' => [
-						['account_id' => (int) $rule['expense_account_id'], 'debit'  => $amount, 'credit' => '0.00'],
-						['account_id' => (int) $rule['wallet_account_id'],  'debit'  => '0.00',  'credit' => $amount, 'subledger_user_id' => (int) $patron['user_id']],
-					],
+				$lines = [
+					['account_id' => (int) $rule['expense_account_id'], 'debit'  => $amount, 'credit' => '0.00'],
+					['account_id' => (int) $rule['wallet_account_id'],  'debit'  => '0.00',  'credit' => $amount, 'subledger_user_id' => $user_id],
 				];
 
+				// Wrap create_entry + write_credit_log in a transaction so a
+				// credit_log INSERT failure rolls back the journal entry —
+				// prevents orphan journal rows that would let a second run
+				// duplicate the credit.
+				$this->db->sql_transaction('begin');
 				try
 				{
-					$this->ledger->create_entry($entry);
+					// bbAccounts ledger->create_entry uses positional args.
+					// reference_id (int) carries the rule_id back to bbAccounts
+					// for at-a-glance attribution; precise idempotency lives
+					// in bbpatreon's own credit_log table (outbox pattern).
+					$journal_id = (int) $this->ledger->create_entry(
+						time(),
+						sprintf('Patreon monthly credit (%s) — %s', $rule['rule_label'], $period_ymd),
+						$lines,
+						'pledge_period',
+						$rule_id,
+						'avathar.bbpatreon'
+					);
+					$this->write_credit_log($rule_id, $user_id, $period_ymd, $journal_id);
+					$this->db->sql_transaction('commit');
 					$result['credited']++;
 				}
 				catch (\Throwable $e)
 				{
+					$this->db->sql_transaction('rollback');
 					$result['errors'][] = [
-						'user_id' => (int) $patron['user_id'],
-						'rule_id' => (int) $rule['rule_id'],
+						'user_id' => $user_id,
+						'rule_id' => $rule_id,
 						'message' => $e->getMessage(),
 					];
 				}
@@ -165,16 +187,28 @@ class bbaccounts_recorder
 		return $rows ?: [];
 	}
 
-	protected function journal_entry_exists(string $reference_id): bool
+	protected function credit_log_entry_exists(int $rule_id, int $user_id, string $period_ymd): bool
 	{
-		$sql = "SELECT journal_id
-			FROM " . $this->table_prefix . "bbaccounts_journal
-			WHERE reference_source = 'avathar.bbpatreon'
-				AND reference_type = 'pledge_period'
-				AND reference_id = '" . $this->db->sql_escape($reference_id) . "'";
+		$sql = 'SELECT log_id
+			FROM ' . $this->credit_log_table . "
+			WHERE rule_id = " . $rule_id . "
+				AND user_id = " . $user_id . "
+				AND period = '" . $this->db->sql_escape($period_ymd) . "'";
 		$result = $this->db->sql_query_limit($sql, 1);
-		$found = $this->db->sql_fetchfield('journal_id', false, $result);
+		$found = $this->db->sql_fetchfield('log_id', false, $result);
 		$this->db->sql_freeresult($result);
 		return $found !== false;
+	}
+
+	protected function write_credit_log(int $rule_id, int $user_id, string $period_ymd, int $journal_id): void
+	{
+		$sql = 'INSERT INTO ' . $this->credit_log_table . ' ' . $this->db->sql_build_array('INSERT', [
+			'rule_id'    => $rule_id,
+			'user_id'    => $user_id,
+			'period'     => $period_ymd,
+			'journal_id' => $journal_id,
+			'created_at' => time(),
+		]);
+		$this->db->sql_query($sql);
 	}
 }
