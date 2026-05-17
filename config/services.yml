@@ -34,6 +34,16 @@ services:
             - '%core.php_ext%'
             - '%avathar.bbpatreon.tables.patreon_tiers%'
 
+    # bbAccounts integration recorder — nullable ledger injection makes
+    # bbpatreon work fine when bbAccounts is absent.
+    avathar.bbpatreon.service.bbaccounts_recorder:
+        class: avathar\bbpatreon\service\bbaccounts_recorder
+        arguments:
+            - '@?avathar.bbaccounts.service.ledger'
+            - '@dbal.conn'
+            - '@log'
+            - '%core.table_prefix%'
+
     # Event listener
     avathar.bbpatreon.listener:
         class: avathar\bbpatreon\event\listener
