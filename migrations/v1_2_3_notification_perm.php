@@ -18,11 +18,11 @@ namespace avathar\bbpatreon\migrations;
  * admins can grant it to mod roles or specific groups via the standard
  * permission UI.
  */
-class v1_1_4_notification_perm extends \phpbb\db\migration\migration
+class v1_2_3_notification_perm extends \phpbb\db\migration\migration
 {
 	public static function depends_on()
 	{
-		return ['\avathar\bbpatreon\migrations\v1_1_3_credit_log'];
+		return ['\avathar\bbpatreon\migrations\v1_2_2_credit_log'];
 	}
 
 	public function effectively_installed()

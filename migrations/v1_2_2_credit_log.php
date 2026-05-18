@@ -24,11 +24,11 @@ namespace avathar\bbpatreon\migrations;
  * into a composite string reference is infeasible. bbpatreon owns its
  * idempotency state instead.
  */
-class v1_1_3_credit_log extends \phpbb\db\migration\migration
+class v1_2_2_credit_log extends \phpbb\db\migration\migration
 {
 	public static function depends_on()
 	{
-		return ['\avathar\bbpatreon\migrations\v1_1_2_bbaccounts_integration'];
+		return ['\avathar\bbpatreon\migrations\v1_2_1_bbaccounts_integration'];
 	}
 
 	public function effectively_installed()
