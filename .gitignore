@@ -18,3 +18,5 @@ Icon
 .com.apple.timemachine.donotpresent
 .claude
 *.cache
+contrib/specs
+contrib/plans
