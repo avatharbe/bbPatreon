@@ -5,7 +5,7 @@ Patreon integration for phpBB — link patron accounts via OAuth and automatical
 Developed and maintained by [Avathar.be](https://www.avathar.be).
 
 #### Version
-1.0.0
+1.2.4
 
 [![Tests](https://github.com/avatharbe/bbpatreon/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/avatharbe/bbpatreon/actions/workflows/tests.yml)
 
@@ -58,12 +58,19 @@ Developed and maintained by [Avathar.be](https://www.avathar.be).
 - Dutch, English, French, German, Portuguese, Spanish
 
 ### Changelog
+- 1.2.4
+  - [NEW] bbAccounts integration: active patrons get monthly journal-entry credits via admin-configured rules in ACP → bbPatreon → bbAccounts Integration. Nightly cron + manual "Run credit now" button. Outbox-pattern idempotency via the new `bbpatreon_credit_log` table. Soft-coupled: works fine when bbAccounts is not installed. (#18)
+  - [NEW] New permission `u_patreon_notify` gates who receives "X linked their Patreon account" notifications. Default-granted to ROLE_ADMIN_FULL only; admins can extend to moderator roles or specific groups via ACP → Permissions. (#19)
+  - [NEW] Optional "set tier group as default" ACP toggle (default OFF). When enabled, promoting a patron to a tier-mapped group also sets it as their default phpBB group (username adopts the group colour and rank); demotion reverts to Registered users. (#20)
+  - [FIX] Notification body now shows the human-readable tier name (e.g. "Tier: Bronze Supporter") instead of the raw Patreon tier ID. (#21)
+  - [FIX] Notification type lang key now matches phpBB's expected dotted format — UCP → Notifications → Notification Options shows a proper label instead of the raw placeholder. (#16)
+
 - 1.0.0
   - [CHG] "Show me as a supporter" option now only available to paying patrons (free-tier users cannot opt in)
   - [CHG] Clarified explain text in all 6 languages: option is reserved for paying patrons
   - [FIX] Purging extension data now cleans up orphan OAuth links from the core `oauth_accounts` table
 
-- 1.0.0-RC4
+1.0.0-RC4
   - [FIX] Fatal error when rendering "Patreon linked" notifications — missing user_loader injection (#14)
   - [FIX] Fatal error when disabling extension with unread notification rows — orphaned notifications now purged on disable (#15)
 
