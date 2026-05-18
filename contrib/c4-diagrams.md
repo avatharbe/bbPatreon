@@ -12,11 +12,13 @@ C4Context
     System(forum, "avathar.be/forum", "phpBB 3.3 forum with bbPatreon extension installed")
 
     System_Ext(patreon, "Patreon Platform", "OAuth2 provider, Campaign API v2, Webhooks")
+    System(bbaccounts, "bbAccounts (optional sibling ext)", "Double-entry ledger — receives monthly journal entries crediting active patrons' wallets")
 
     Rel(patron, forum, "Browses forum, links Patreon account via UCP")
     Rel(admin, forum, "Configures tiers, credentials, webhooks via ACP")
     Rel(forum, patreon, "OAuth redirect, API calls (members, campaigns, tiers)")
     Rel(patreon, forum, "Webhooks (pledge create/update/delete), OAuth callback")
+    Rel(forum, bbaccounts, "1.2.4+: posts monthly journal entries via ledger service (soft-coupled)")
 ```
 
 ## C4 Container Diagram
@@ -30,18 +32,20 @@ C4Container
 
     System_Boundary(forum, "phpBB Forum") {
         Container(phpbb, "phpBB Core", "PHP", "Forum engine, user/group management, OAuth framework, cron scheduler")
-        Container(ext, "bbPatreon Extension", "PHP", "Patreon integration: OAuth, webhooks, sync, group mapping")
-        ContainerDb(db, "MySQL Database", "MySQL", "phpBB tables + phpbb_patreon_sync")
+        Container(ext, "bbPatreon Extension", "PHP", "Patreon integration: OAuth, webhooks, sync, group mapping, optional bbAccounts recorder")
+        Container(bbacc, "bbAccounts Extension (optional)", "PHP", "Double-entry ledger; receives credit journal entries from bbPatreon when both extensions are installed")
+        ContainerDb(db, "MySQL Database", "MySQL", "phpBB tables + bbPatreon tables (patreon_sync, patreon_tiers, bbpatreon_credit_rules, bbpatreon_credit_log) + bbAccounts tables")
     }
 
     System_Ext(patreon, "Patreon API v2", "OAuth2, Campaigns, Members, Webhooks")
 
     Rel(patron, phpbb, "UCP: link/unlink Patreon", "HTTPS")
-    Rel(admin, phpbb, "ACP: configure tiers & credentials", "HTTPS")
+    Rel(admin, phpbb, "ACP: configure tiers, credentials, credit rules", "HTTPS")
     Rel(phpbb, ext, "Delegates to extension controllers & services")
-    Rel(ext, db, "Reads/writes sync state, config, group membership")
+    Rel(ext, db, "Reads/writes sync state, config, group membership, credit_rules, credit_log")
     Rel(ext, patreon, "OAuth flow, GET members/campaigns/tiers, POST webhook registration", "HTTPS")
     Rel(patreon, ext, "POST /patreon/webhook (pledge events)", "HTTPS")
+    Rel(ext, bbacc, "Posts journal entries via @?avathar.bbaccounts.service.ledger (1.2.4+, nullable DI)")
 ```
 
 ## C4 Component Diagram
@@ -53,18 +57,21 @@ C4Component
     Container_Boundary(ext, "bbPatreon Extension") {
         Component(ucp, "UCP Controller", "PHP", "Link/unlink Patreon account, OAuth redirect & callback processing")
         Component(acp, "ACP Controller", "PHP", "Settings, tier mapping, webhook management, manual sync, linked users")
+        Component(acp_bbacc, "bbAccounts ACP Controller", "PHP", "1.2.4+: rule CRUD + 'Run credit now' button for the bbAccounts integration mode")
         Component(webhook, "Webhook Controller", "PHP", "POST /patreon/webhook — validates HMAC-MD5 signature, dispatches pledge events")
         Component(callback, "Callback Controller", "PHP", "GET /patreon/callback — forwards OAuth code to UCP")
         Component(oauth_svc, "OAuth Service", "PHP", "PHPoAuthLib service for Patreon OAuth2 endpoints")
         Component(api_client, "API Client", "PHP", "Curl-based Patreon API v2 wrapper, auto-refreshes on 401")
-        Component(group_mapper, "Group Mapper", "PHP", "Resolves tier_id to phpBB group_id, promotes/demotes users")
-        Component(cron, "Cron Sync Task", "PHP", "Nightly reconciliation — paginated member fetch, group fix-up, grace enforcement")
-        Component(notification, "Notification", "PHP", "Alerts admins/mods when a user links Patreon")
-        Component(listener, "Event Listener", "PHP", "Hooks into phpBB OAuth login event to fetch tier and sync groups")
+        Component(group_mapper, "Group Mapper", "PHP", "Resolves tier_id to phpBB group_id, promotes/demotes users, optional default-group toggle (1.2.4+)")
+        Component(recorder, "bbAccounts Recorder", "PHP", "1.2.4+: posts monthly journal entries via @?avathar.bbaccounts.service.ledger; outbox idempotency via bbpatreon_credit_log")
+        Component(cron, "Cron Sync Task", "PHP", "Nightly reconciliation — paginated member fetch, group fix-up, grace enforcement, end-of-run bbAccounts credit invocation")
+        Component(notification, "Notification", "PHP", "Alerts users with u_patreon_notify (1.2.4+; default admins only) when a user links Patreon")
+        Component(listener, "Event Listener", "PHP", "Hooks into phpBB events: language load, OAuth login sync, navbar/team-page injection, core.permissions registration")
     }
 
-    ContainerDb(db, "Database", "MySQL", "phpbb_patreon_sync, phpbb_oauth_accounts, phpbb_config")
+    ContainerDb(db, "Database", "MySQL", "phpbb_patreon_sync, phpbb_patreon_tiers, phpbb_bbpatreon_credit_rules, phpbb_bbpatreon_credit_log, phpbb_oauth_accounts, phpbb_config")
     System_Ext(patreon, "Patreon API v2", "OAuth2 + REST API + Webhooks")
+    System(bbacc_ledger, "bbAccounts Ledger Service (optional)", "@avathar.bbaccounts.service.ledger — accepts balanced double-entry journal entries from sibling extensions")
 
     Rel(ucp, oauth_svc, "Initiates OAuth redirect")
     Rel(callback, ucp, "Forwards OAuth code")
@@ -77,10 +84,15 @@ C4Component
     Rel(webhook, db, "Upserts sync row")
     Rel(acp, api_client, "Fetches campaigns, tiers, webhook status")
     Rel(acp, group_mapper, "Manual sync triggers group updates")
+    Rel(acp_bbacc, recorder, "Run credit now → credit_active_patrons_for_period")
+    Rel(acp_bbacc, db, "CRUD on bbpatreon_credit_rules")
     Rel(cron, api_client, "GET /campaigns/{id}/members (paginated)")
     Rel(cron, group_mapper, "Reconciles all group memberships")
     Rel(cron, db, "Upserts sync rows, marks orphans")
-    Rel(group_mapper, db, "group_user_add / group_user_del")
+    Rel(cron, recorder, "End-of-run: credit_active_patrons_for_period(gmdate('Y-m'))")
+    Rel(group_mapper, db, "group_user_add / safe_group_user_del / group_user_attributes")
+    Rel(recorder, db, "Reads credit_rules + patreon_sync, writes credit_log")
+    Rel(recorder, bbacc_ledger, "create_entry(...) per (rule × patron × period)")
     Rel(api_client, patreon, "HTTPS REST calls")
     Rel(oauth_svc, patreon, "OAuth2 authorize/token")
     Rel(patreon, webhook, "POST pledge events")
@@ -197,4 +209,46 @@ sequenceDiagram
 
     Cron->>DB: Log summary to admin log
     Cron->>DB: Update patreon_last_cron_sync
+```
+
+## Flow: Monthly bbAccounts credit (1.2.4+)
+
+```mermaid
+sequenceDiagram
+    participant Trigger as Cron / "Run credit now" button
+    participant Rec as bbAccounts Recorder
+    participant DB as Database
+    participant Ledger as bbAccounts ledger
+
+    Note over Trigger,Ledger: Triggered nightly by cron with period = gmdate('Y-m'),<br/>or on-demand by ACP "Run credit now" with admin-picked period
+
+    Trigger->>Rec: credit_active_patrons_for_period(period)
+
+    alt bbAccounts not installed (ledger == null)
+        Rec-->>Trigger: {credited: 0, skipped_no_rules: 1}
+    end
+
+    Rec->>DB: SELECT active rules from bbpatreon_credit_rules
+    alt No active rules configured
+        Rec-->>Trigger: {credited: 0, skipped_no_rules: 1}
+    end
+
+    Rec->>DB: SELECT active-pledge patrons (JOIN patreon_sync × oauth_accounts on patreon_user_id)
+
+    loop For each (rule × patron)
+        Rec->>DB: SELECT bbpatreon_credit_log WHERE rule_id + user_id + period
+        alt Row already exists
+            Note over Rec: Skipped (already credited this period)
+        else No row
+            Note over Rec: Begin DB transaction
+            Rec->>Ledger: create_entry(time(), description, lines,<br/>'auto', rule_id, 'avathar.bbpatreon')
+            Note right of Ledger: DR expense_account amount<br/>CR wallet_account amount<br/>(subledger_user_id = patron user_id)
+            Ledger-->>Rec: journal_id
+            Rec->>DB: INSERT bbpatreon_credit_log<br/>(rule_id, user_id, period, journal_id)
+            Note over Rec: Commit (or rollback both on any throw)
+        end
+    end
+
+    Rec-->>Trigger: {credited, skipped_already_credited, errors[]}
+    Trigger->>DB: Log to admin log (LOG_BBPATREON_CREDIT_RUN[_MANUAL])
 ```

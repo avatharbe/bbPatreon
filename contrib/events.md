@@ -56,15 +56,36 @@ public function on_pledge_changed($event)
 
 | Type name | Recipients | Purpose |
 |---|---|---|
-| `avathar.bbpatreon.notification.type.patreon_linked` | Admins and moderators | Sent when a user links their Patreon account via the UCP |
+| `avathar.bbpatreon.notification.type.patreon_linked` | Users with `u_patreon_notify` (default: ROLE_ADMIN_FULL only) | Sent when a user links their Patreon account via the UCP |
+
+Since 1.2.4, recipients are gated by the new `u_patreon_notify` permission instead of the broad "any admin or moderator" rule used in 1.0.0 / 1.1.0. Admins can grant `u_patreon_notify` to moderator roles or specific groups via ACP → Permissions ("Miscellaneous" category).
+
+### 1.4 Permissions
+
+| Permission | Default-granted to | Purpose |
+|---|---|---|
+| `u_patreon_notify` | `ROLE_ADMIN_FULL` | Receive the patreon_linked notification (see 1.3) |
+
+### 1.5 Database tables
+
+| Table | Owner | Purpose |
+|---|---|---|
+| `phpbb_patreon_sync` | bbPatreon | Per-patron state — `patreon_user_id`, `tier_id`, `pledge_status`, `pledge_cents`, sync timestamps, public-display opt-in flags. Primary key is `patreon_user_id`; the link to phpBB's `user_id` lives in core's `phpbb_oauth_accounts` (`provider='patreon'`, `oauth_provider_id = patreon_user_id`). |
+| `phpbb_patreon_tiers` | bbPatreon | Static tier catalogue — `tier_id`, `tier_label`, `amount_cents`, mapped phpBB `group_id`, published flag. |
+| `phpbb_bbpatreon_credit_rules` | bbPatreon (1.2.4+) | Admin-configured bbAccounts integration rules. One row per `(expense_account_id, wallet_account_id, amount_per_dollar)` mapping. Drives the recurring bbAccounts journal entries posted to active patrons. |
+| `phpbb_bbpatreon_credit_log` | bbPatreon (1.2.4+) | Outbox idempotency log for the bbAccounts integration. UNIQUE KEY on `(rule_id, user_id, period)` — guarantees at most one journal entry per (rule, patron, calendar month). Each row carries a back-link to the `phpbb_bbaccounts_journal.journal_id` it represents. |
 
 ---
 
-## 2. Events Subscribed from Other Extensions
+## 2. Services / Extensions Consumed (1.2.4+)
 
-Extensions can listen to each other's events or consume each other's services. This section documents every place where bbPatreon reaches *out* to another extension.
+bbPatreon optionally consumes services exposed by other extensions when they are installed. All such consumptions are soft-coupled (nullable DI) — bbPatreon works fine when the other extension is absent.
 
-None. bbPatreon does not subscribe to any events dispatched by third-party extensions.
+| Service ID | Source extension | Used by | Purpose |
+|---|---|---|---|
+| `avathar.bbaccounts.service.ledger` | [bbAccounts](https://github.com/avatharbe/bbAccounts) | `service\bbaccounts_recorder` | Posts a balanced double-entry journal entry per (active rule, active-pledge patron, calendar month) tuple. Recorder is invoked by the nightly cron (`cron/task/sync::run`) and by the ACP "Run credit now" button. Skipped silently when the ledger service is not available in the container. |
+
+bbPatreon does not subscribe to any events dispatched by third-party extensions.
 
 ---
 
@@ -83,7 +104,10 @@ This section lists every phpBB hook that bbPatreon uses internally to deliver it
 | phpBB Core Event | Handler | Purpose |
 |---|---|---|
 | `core.user_setup` | `load_language_on_setup()` | Load the bbpatreon language file on every page |
+| `core.page_header` | `add_page_header_links()` | Inject the "Supporters" navbar link when the public supporters page is enabled |
+| `core.memberlist_team_modify_template_vars` | `add_patreon_to_team()` | Inject Patreon tier badge into the "The Team" page row for active patrons |
 | `core.oauth_login_after_check_if_provider_id_has_match` | `on_oauth_login()` | After phpBB matches an OAuth account link, fetch the user's Patreon tier and sync their group membership |
+| `core.permissions` | `on_permissions()` | Register `u_patreon_notify` in phpBB's permission MASK UI so admins can grant it via the role/group/user tabs (1.2.4+) |
 
 ### 3.2 Template Events
 

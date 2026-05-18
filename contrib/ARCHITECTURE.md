@@ -17,7 +17,8 @@ A phpBB extension that integrates Patreon patron status with forum membership. E
 - React to pledge changes (create, update, delete) in near-real-time via webhooks
 - Provide an ACP panel to map Patreon tier IDs to phpBB group IDs, with auto-fetch from the API
 - Nightly cron as a safety-net reconciliation against the Patreon members API
-- Notify admins and moderators when a user links their Patreon account
+- Notify users with the `u_patreon_notify` permission when a user links their Patreon account (defaults to admins only; admins can grant the perm to moderator roles or specific groups)
+- Optionally credit active patrons' wallets in the [bbAccounts](https://github.com/avatharbe/bbAccounts) ledger extension every month (soft-coupled; bbPatreon works fine when bbAccounts is not installed)
 
 ## Non-Goals
 
@@ -46,20 +47,29 @@ A phpBB extension that integrates Patreon patron status with forum membership. E
 │  │  OAuth Service   Webhook Controller   Cron Task  │   │
 │  │       │                 │                 │      │   │
 │  │       ▼                 ▼                 │      │   │
-│  │  UCP Controller   Group Mapper  ◄─────────┘      │   │
-│  │  (link/unlink)    (tier → group)                  │   │
-│  │       │                 │                         │   │
-│  │       ▼                 │                         │   │
-│  │  Notification           │                         │   │
-│  │  (admin/mod alert)      │                         │   │
-│  └──────────────────────────────────────────────────┘   │
-│                                                          │
-│  phpBB Core Tables          Extension Tables             │
-│  ├── phpbb_users            ├── phpbb_patreon_sync       │
-│  ├── phpbb_groups           └── (ACP config in          │
-│  ├── phpbb_user_group            phpbb_config)           │
-│  ├── phpbb_oauth_accounts                               │
-│  └── phpbb_oauth_tokens                                 │
+│  │  UCP Controller   Group Mapper  ◄─────────┤      │   │
+│  │  (link/unlink)    (tier → group)          │      │   │
+│  │       │                 │                 │      │   │
+│  │       ▼                 │                 ▼      │   │
+│  │  Notification           │       bbAccounts        │   │
+│  │  (u_patreon_notify)     │       Recorder          │   │
+│  │                         │       (1.2.4+)          │   │
+│  └─────────────────────────┼─────────────┬───────────┘   │
+│                            │             │ @? nullable   │
+│                            │             ▼ (soft-coupled)│
+│                            │   ┌────────────────────┐    │
+│                            │   │ avathar/bbAccounts │    │
+│                            │   │  ledger service    │    │
+│                            │   │  (optional sibling)│    │
+│                            │   └─────────┬──────────┘    │
+│                            │             │               │
+│  phpBB Core Tables          │   Ext Tables (bbpatreon)   │
+│  ├── phpbb_users            └─→ ├── phpbb_patreon_sync   │
+│  ├── phpbb_groups               ├── phpbb_patreon_tiers  │
+│  ├── phpbb_user_group           ├── phpbb_bbpatreon_     │
+│  ├── phpbb_oauth_accounts       │   credit_rules (1.2.4+)│
+│  └── phpbb_oauth_tokens         └── phpbb_bbpatreon_     │
+│                                     credit_log  (1.2.4+) │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -105,6 +115,60 @@ CREATE TABLE phpbb_patreon_sync (
 
 > **Note:** phpBB DBAL does not support ENUM or DATETIME; the implementation uses VARCHAR(20) for pledge_status and TIMESTAMP (unsigned int) for dates.
 
+### Tier catalogue (`phpbb_patreon_tiers`)
+
+Static tier metadata cached locally so admins can manage tier→group mappings without making an API call on every ACP load:
+
+```sql
+CREATE TABLE phpbb_patreon_tiers (
+    tier_id        VARCHAR(64)  NOT NULL,     -- Patreon tier ID (PK)
+    tier_label     VARCHAR(255),               -- Human-readable name
+    amount_cents   INT UNSIGNED DEFAULT 0,     -- Tier's price point in cents
+    currency       VARCHAR(8),
+    group_id       INT UNSIGNED DEFAULT 0,     -- Mapped phpBB group_id
+    patron_count   INT UNSIGNED DEFAULT 0,
+    published      TINYINT(1)   DEFAULT 1,
+    PRIMARY KEY (tier_id)
+);
+```
+
+### bbAccounts integration tables (1.2.4+)
+
+These two tables are only used when the [bbAccounts](https://github.com/avatharbe/bbAccounts) extension is installed. Without bbAccounts they are inert (rows can exist but no journal entries are posted).
+
+```sql
+-- Admin-configured credit rules. One row per (expense_account_id,
+-- wallet_account_id, amount_per_dollar) mapping. An admin with multiple
+-- rules can credit several pools at once (e.g. forum POINTS + a separate
+-- USD-denominated patron wallet).
+CREATE TABLE phpbb_bbpatreon_credit_rules (
+    rule_id            INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    rule_label         VARCHAR(100),
+    expense_account_id INT UNSIGNED DEFAULT 0,
+    wallet_account_id  INT UNSIGNED DEFAULT 0,
+    amount_per_dollar  DECIMAL(10,2) DEFAULT 0.00,
+    is_active          TINYINT(1)    DEFAULT 1,
+    rule_order         INT UNSIGNED DEFAULT 0,
+    PRIMARY KEY (rule_id),
+    KEY is_active_order (is_active, rule_order)
+);
+
+-- Outbox idempotency log. One row per (rule, patron, calendar month)
+-- tuple that was successfully credited. UNIQUE KEY makes the recorder
+-- short-circuit cleanly on the second run in a given period without
+-- touching the bbAccounts journal.
+CREATE TABLE phpbb_bbpatreon_credit_log (
+    log_id     INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    rule_id    INT UNSIGNED DEFAULT 0,
+    user_id    INT UNSIGNED DEFAULT 0,
+    period     VARCHAR(7),               -- YYYY-MM
+    journal_id INT UNSIGNED DEFAULT 0,   -- back-link to phpbb_bbaccounts_journal.journal_id
+    created_at INT UNSIGNED DEFAULT 0,
+    PRIMARY KEY (log_id),
+    UNIQUE KEY rule_user_period (rule_id, user_id, period)
+);
+```
+
 ### ACP Configuration (stored in phpbb_config)
 
 ```
@@ -116,9 +180,18 @@ patreon_campaign_id
 patreon_webhook_secret
 patreon_grace_period_days     -- days before demotion after pledge:delete (default: 0)
 patreon_last_cron_sync        -- unix timestamp of last cron run
+patreon_supporters_page_enabled
+patreon_supporters_show_amounts
+bbpatreon_set_default_group   -- bool, 1.2.4+ — promote/demote also sets/resets default group
 auth_oauth_patreon_key        -- synced copy of patreon_client_id (phpBB OAuth convention)
 auth_oauth_patreon_secret     -- synced copy of patreon_client_secret (phpBB OAuth convention)
 ```
+
+### Permissions (1.2.4+)
+
+| Key | Default-granted to | Purpose |
+|---|---|---|
+| `u_patreon_notify` | `ROLE_ADMIN_FULL` | Receive "X linked their Patreon account" notification. Admins can grant to moderator roles or specific groups via ACP → Permissions. |
 
 ### ACP Configuration (stored in phpbb_config_text)
 
@@ -184,8 +257,13 @@ ext/avathar/bbpatreon/
 ├── event/
 │   └── listener.php                     # Listens on phpBB events
 │                                        # core.user_setup → load language
+│                                        # core.page_header → inject Supporters navbar link
+│                                        # core.memberlist_team_modify_template_vars
+│                                        #   → inject Patreon tier badge on Team page
 │                                        # core.oauth_login_after_check_if_provider_id_has_match
 │                                        #   → fetch tier, upsert sync, call group_mapper
+│                                        # core.permissions → register u_patreon_notify
+│                                        #   in phpBB's MASK UI (1.2.4+)
 │
 ├── cron/
 │   └── task/
@@ -203,27 +281,54 @@ ext/avathar/bbpatreon/
 │   │                                    # methods: request(), get_campaign_members(),
 │   │                                    #          register_webhook(), refresh_token()
 │   │
-│   └── group_mapper.php                 # Resolves tier_id → phpBB group_id from config
-│                                        # promotes via group_user_add()
-│                                        # demotes via group_user_del()
-│                                        # handles grace period (skips demotion, cron enforces)
-│                                        # handles tier changes (remove old, add new)
+│   ├── group_mapper.php                 # Resolves tier_id → phpBB group_id from config
+│   │                                    # promotes via group_user_add()
+│   │                                    # demotes via group_user_del() (via safe_group_user_del
+│   │                                    #   helper that resets default-group to Registered first
+│   │                                    #   if the bbpatreon_set_default_group toggle is on)
+│   │                                    # handles grace period (skips demotion, cron enforces)
+│   │                                    # handles tier changes (remove old, add new)
+│   │                                    # 1.2.4+: optional default-group toggle calls
+│   │                                    #   group_user_attributes('default', target_group_id, …)
+│   │                                    #   so the patron's username adopts the group colour/rank
+│   │
+│   └── bbaccounts_recorder.php          # bbAccounts integration (1.2.4+)
+│                                        # Nullable DI on @?avathar.bbaccounts.service.ledger
+│                                        # credit_active_patrons_for_period($period_ymd):
+│                                        #   for each (active rule × active-pledge patron):
+│                                        #     SELECT bbpatreon_credit_log → if present, skip
+│                                        #     transaction: ledger->create_entry + INSERT log row
+│                                        # Idempotent via UNIQUE KEY (rule, user, period)
+│                                        # Called from cron/task/sync::run and ACP "Run credit now"
 │
 ├── notification/
 │   └── type/
-│       └── patreon_linked.php           # Notification sent to admins/moderators
+│       └── patreon_linked.php           # Notification sent to users with u_patreon_notify
+│                                        #   (1.2.4+; default-granted to admins only)
 │                                        # when a user links their Patreon account
-│                                        # shows username and tier
+│                                        # get_reference() looks up the human-readable tier label
+│                                        #   from patreon_tiers (1.2.4+; previously showed raw ID)
 │
 ├── migrations/
-│   └── v1_0_0_initial.php              # Creates phpbb_patreon_sync table
-│                                        # Adds config and config_text keys
-│                                        # Registers ACP module (under ACP_CAT_DOT_MODS)
-│                                        # Registers UCP module
+│   ├── v1_0_0_initial.php              # Creates phpbb_patreon_sync table
+│   │                                    # Adds config and config_text keys
+│   │                                    # Registers ACP module (under ACP_CAT_DOT_MODS)
+│   │                                    # Registers UCP module
+│   ├── v1_1_0_supporters_page.php      # Adds public supporters page schema + config
+│   ├── v1_2_0_show_pledge.php          # Adds show_pledge_public column + config toggle
+│   ├── v1_2_1_bbaccounts_integration.php  # 1.2.4 series — adds bbpatreon_credit_rules
+│   │                                        # table + bbaccounts_integration ACP mode
+│   ├── v1_2_2_credit_log.php           # Adds bbpatreon_credit_log (outbox idempotency)
+│   ├── v1_2_3_notification_perm.php    # Adds u_patreon_notify permission + grant
+│   └── v1_2_4_default_group.php        # Adds bbpatreon_set_default_group config flag
 │
 ├── acp/
-│   ├── main_info.php                    # ACP module metadata (mode: settings)
-│   └── main_module.php                  # ACP module class → delegates to acp_controller
+│   ├── main_info.php                    # ACP module metadata
+│   │                                    # Modes: settings, bbaccounts_integration (1.2.4+)
+│   └── main_module.php                  # ACP module class
+│                                        # Dispatches on $mode:
+│                                        #   settings → acp_controller::display_options
+│                                        #   bbaccounts_integration → bbaccounts_acp_controller::handle
 │
 ├── ucp/
 │   ├── main_info.php                    # UCP module metadata (mode: settings)
@@ -329,12 +434,30 @@ On 401, automatically calls `refresh_token()` and retries once.
 
 ### Group Mapper (`service/group_mapper.php`)
 
-Reads `patreon_tier_group_map` config (JSON) to resolve `tier_id → phpbb_group_id`.
+Reads tier→group mappings from `phpbb_patreon_tiers.group_id` to resolve `tier_id → phpbb_group_id`.
 
 - **Promotion:** `group_user_add()` — adds user to tier group
-- **Demotion:** `group_user_del()` — removes from all tracked patron groups
-- **Tier change:** remove from old group, add to new
-- **Grace period:** when status is `former_patron`/`declined_patron` and grace_period > 0, demotion is skipped; the nightly cron enforces it by checking `last_webhook_at + grace_days < now()`
+- **Demotion:** `safe_group_user_del()` helper — wraps phpBB's `group_user_del()`. When the `bbpatreon_set_default_group` config flag is on, checks whether the group being removed is the user's current default; if so, resets default to the Registered users group first (otherwise the user would be left with an invalid default group_id pointing at a group they're no longer in).
+- **Tier change:** remove from old group via `safe_group_user_del`, add to new via `group_user_add`
+- **Grace period:** when status is `former_patron`/`declined_patron` and grace_period > 0, demotion is skipped; the nightly cron enforces it by checking `last_synced_at + grace_days < now()`
+- **Default-group toggle (1.2.4+):** when `bbpatreon_set_default_group=1`, promotion also calls `group_user_attributes('default', target_group_id, …)` so the patron's username takes on the tier group's colour and rank. Demotion resets the default to Registered users (custom pre-promotion default groups are not preserved across cycles).
+
+### bbAccounts Recorder (`service/bbaccounts_recorder.php`, 1.2.4+)
+
+Single-purpose service that posts journal entries to the bbAccounts ledger on behalf of active-pledge patrons. Soft-coupled via nullable DI on `@?avathar.bbaccounts.service.ledger` — when bbAccounts is not installed, `is_available()` returns false and `credit_active_patrons_for_period()` short-circuits with `skipped_no_rules=1`.
+
+**Outbox pattern (idempotency):**
+
+bbAccounts' `ledger->create_entry()` takes `reference_id` as an int, so the composite `<rule>-<user>-<period>` cannot fit in the ledger's reference fields. bbPatreon owns its own idempotency state in `phpbb_bbpatreon_credit_log` with a UNIQUE KEY on `(rule_id, user_id, period)`. Before posting, the recorder queries the log; on successful create_entry it INSERTs the log row with the returned `journal_id`; both wrapped in a DB transaction so a credit_log insert failure rolls back the journal entry.
+
+**Per-patron filter:**
+
+The recorder joins `patreon_sync` with `phpbb_oauth_accounts` (`provider='patreon'`) — only patrons who have completed the UCP OAuth link flow are credited (a `user_id` is required for the bbAccounts subledger). Creator-side known patrons (synced from the campaign API but never linked) are intentionally excluded.
+
+**Trigger surfaces:**
+
+- `cron/task/sync::run()` invokes the recorder at the end of every cron run with `gmdate('Y-m')` as the period (UTC).
+- `controller/bbaccounts_acp_controller::run_credit()` invokes the recorder when the admin clicks "Run credit now" in the ACP, with a period picked from a `<input type="month">` field (defaults to current UTC month). Used for back-filling missed months or testing freshly-configured rules.
 
 ### Cron Task (`cron/task/sync.php`)
 
@@ -348,7 +471,9 @@ Runs every 24 hours. Full reconciliation:
 
 ### Notification (`notification/type/patreon_linked.php`)
 
-Sent to all users with `a_` (admin) or `m_` (moderator) permissions when a user links their Patreon account. Shows the username and their tier. The linking user is excluded from the notification.
+Sent to users with the `u_patreon_notify` permission (default-granted to `ROLE_ADMIN_FULL` only) when a user links their Patreon account. Admins can extend the perm to moderator roles or specific groups via ACP → Permissions. Shows the username and tier label (the human-readable name from `phpbb_patreon_tiers.tier_label`, looked up at render time; falls back to the raw tier_id if the tier row is missing). The linking user is excluded from the notification.
+
+**Pre-1.2.4 behaviour:** the notification went to all users with any `a_*` (admin) or `m_*` (moderator) permission. The dedicated `u_patreon_notify` perm was introduced in 1.2.4 (issue #19) so admins can prevent moderators from receiving these notifications.
 
 ### Unlinking
 
