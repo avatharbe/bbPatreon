@@ -131,6 +131,14 @@ class webhook
 			$tier_id = '';
 			$pledge_cents = 0;
 		}
+		else if ($patron_status === '' && $tier_id !== '')
+		{
+			// Patreon reports a null patron_status for members whose only
+			// entitlement is a $0 ("free") tier, since patron_status reflects
+			// paid pledge state rather than free membership. A currently
+			// entitled tier means they're an active member regardless.
+			$patron_status = 'active_patron';
+		}
 
 		// Upsert sync table
 		$this->upsert_sync($patreon_user_id, $tier_id, $patron_status, $pledge_cents);

@@ -167,4 +167,103 @@ class api_client_test extends \phpbb_test_case
 		$this->assertIsArray($result);
 		$this->assertEmpty($result);
 	}
+
+	/**
+	 * Build an api_client whose request() returns canned member data
+	 * instead of making a real curl call, so the JSON-parsing logic in
+	 * get_campaign_members() can be tested in isolation.
+	 */
+	protected function get_client_with_response(array $response)
+	{
+		$this->config = new \phpbb\config\config(array(
+			'patreon_creator_access_token'	=> 'token123',
+			'patreon_creator_refresh_token'	=> '',
+			'patreon_client_id'				=> 'test_client_id',
+			'patreon_client_secret'			=> 'test_client_secret',
+			'patreon_campaign_id'			=> '12345',
+		));
+
+		return new class($this->config, $this->log, $response) extends \avathar\bbpatreon\service\api_client
+		{
+			private $canned_response;
+
+			public function __construct($config, $log, array $canned_response)
+			{
+				parent::__construct($config, $log);
+				$this->canned_response = $canned_response;
+			}
+
+			public function request(string $url, string $method = 'GET', array $post_data = [], bool $is_retry = false): array
+			{
+				return $this->canned_response;
+			}
+		};
+	}
+
+	/**
+	 * Patreon returns a null patron_status for members whose only
+	 * entitlement is a $0 ("free") tier — patron_status reflects paid
+	 * pledge state, not free membership. Since the member still holds a
+	 * currently_entitled_tiers relationship, get_campaign_members() must
+	 * normalize this to 'active_patron' rather than leaving it empty,
+	 * otherwise group_mapper::sync_user_groups() will never grant them
+	 * their tier's group (see GitHub issue #23).
+	 */
+	public function test_get_campaign_members_normalizes_null_status_for_entitled_free_tier()
+	{
+		$client = $this->get_client_with_response(array(
+			'data' => array(
+				array(
+					'attributes' => array(
+						'patron_status'						=> null,
+						'currently_entitled_amount_cents'	=> 0,
+					),
+					'relationships' => array(
+						'user' => array('data' => array('id' => 'patreon_user_1')),
+						'currently_entitled_tiers' => array('data' => array(
+							array('id' => 'tier_free'),
+						)),
+					),
+				),
+			),
+			'included' => array(),
+		));
+
+		$result = $client->get_campaign_members();
+
+		$this->assertCount(1, $result);
+		$this->assertSame('active_patron', $result[0]['patron_status']);
+		$this->assertSame('tier_free', $result[0]['tier_id']);
+	}
+
+	/**
+	 * A member with no currently_entitled_tiers at all (e.g. they never
+	 * completed joining a tier) and a null patron_status must NOT be
+	 * normalized to active — there is nothing to be active in. It should
+	 * fall through as an empty string so callers apply their own
+	 * pending_link default.
+	 */
+	public function test_get_campaign_members_keeps_empty_status_when_no_entitled_tier()
+	{
+		$client = $this->get_client_with_response(array(
+			'data' => array(
+				array(
+					'attributes' => array(
+						'patron_status'						=> null,
+						'currently_entitled_amount_cents'	=> 0,
+					),
+					'relationships' => array(
+						'user' => array('data' => array('id' => 'patreon_user_2')),
+					),
+				),
+			),
+			'included' => array(),
+		));
+
+		$result = $client->get_campaign_members();
+
+		$this->assertCount(1, $result);
+		$this->assertSame('', $result[0]['patron_status']);
+		$this->assertSame('', $result[0]['tier_id']);
+	}
 }

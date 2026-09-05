@@ -216,9 +216,20 @@ class api_client
 					$tier_id = $tier_data['id'];
 				}
 
+				$patron_status = $member['attributes']['patron_status'] ?? '';
+
+				// Patreon reports a null patron_status for members whose only
+				// entitlement is a $0 ("free") tier, since patron_status reflects
+				// paid pledge state rather than free membership. A currently
+				// entitled tier means they're an active member regardless.
+				if ($patron_status === '' && $tier_id !== '')
+				{
+					$patron_status = 'active_patron';
+				}
+
 				$members[] = [
 					'patreon_user_id'	=> $patreon_user_id,
-					'patron_status'		=> $member['attributes']['patron_status'] ?? '',
+					'patron_status'		=> $patron_status,
 					'pledge_cents'		=> $member['attributes']['currently_entitled_amount_cents'] ?? 0,
 					'tier_id'			=> $tier_id,
 				];
