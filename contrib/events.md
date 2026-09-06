@@ -75,6 +75,41 @@ Since 1.2.4, recipients are gated by the new `u_patreon_notify` permission inste
 | `phpbb_bbpatreon_credit_rules` | bbPatreon (1.2.4+) | Admin-configured bbAccounts integration rules. One row per `(expense_account_id, wallet_account_id, amount_per_dollar)` mapping. Drives the recurring bbAccounts journal entries posted to active patrons. |
 | `phpbb_bbpatreon_credit_log` | bbPatreon (1.2.4+) | Outbox idempotency log for the bbAccounts integration. UNIQUE KEY on `(rule_id, user_id, period)` — guarantees at most one journal entry per (rule, patron, calendar month). Each row carries a back-link to the `phpbb_bbaccounts_journal.journal_id` it represents. |
 
+### 1.6 Public Services
+
+#### `avathar.bbpatreon.service.patron_data_provider`
+
+The supported way for another extension to read opted-in public patron data — use this instead of querying `phpbb_patreon_sync` directly. Consent is enforced inside the service (only `show_public = 1` + `active_patron` rows are ever returned); the board owner cannot override individual user consent, and neither can a caller of this service.
+
+- **Class:** `\avathar\bbpatreon\service\patron_data_provider`
+- **Since:** unreleased
+- **Methods:**
+  - `get_public_supporters(): array` — one entry per opted-in active patron, pre-formatted for display: `user_id` (int), `username` (string, HTML — pre-rendered via phpBB's `get_username_string()`), `avatar` (string, HTML), `tier_label` (string), `group_name` (string, HTML — colour + built-in group translation already applied), `rank_title` (string), `pledge_amount` (string — formatted with the campaign currency, or `''` if amounts are disabled or the user didn't opt in to showing theirs). Ordered by tier amount descending, then username.
+  - `get_public_supporters_count(): int` — count only, for lightweight display (e.g. a nav-link badge) without formatting every row.
+
+**Example usage:**
+```php
+/** @var \avathar\bbpatreon\service\patron_data_provider $provider */
+$provider = $phpbb_container->get('avathar.bbpatreon.service.patron_data_provider');
+
+foreach ($provider->get_public_supporters() as $supporter)
+{
+    // render $supporter['username'], $supporter['tier_label'], etc.
+    // in your own template — no query, no consent logic to duplicate.
+}
+```
+
+### 1.7 Template Events
+
+Hooks inside bbPatreon's own templates that other extensions can use to inject markup, without modifying bbPatreon's templates.
+
+| Event | Placement | Since |
+|---|---|---|
+| `avathar_bbpatreon_supporters_body_before` | `supporters_body.html`, right after the page title | unreleased |
+| `avathar_bbpatreon_supporters_body_after` | `supporters_body.html`, right after the supporters list panel | unreleased |
+
+To hook into either, create `styles/<style>/template/event/<event_name>.html` in your own extension — no changes to bbPatreon required.
+
 ---
 
 ## 2. Services / Extensions Consumed (1.2.4+)

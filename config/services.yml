@@ -34,6 +34,19 @@ services:
             - '%core.php_ext%'
             - '%avathar.bbpatreon.tables.patreon_tiers%'
 
+    # Public patron data provider — the supported way for other
+    # extensions to read opted-in supporter data without querying
+    # bbpatreon's tables directly. See contrib/events.md.
+    avathar.bbpatreon.service.patron_data_provider:
+        class: avathar\bbpatreon\service\patron_data_provider
+        arguments:
+            - '@config'
+            - '@dbal.conn'
+            - '@language'
+            - '%avathar.bbpatreon.tables.patreon_sync%'
+            - '%avathar.bbpatreon.tables.patreon_tiers%'
+            - '%tables.auth_provider_oauth_account_assoc%'
+
     # bbAccounts integration recorder — nullable ledger injection makes
     # bbpatreon work fine when bbAccounts is absent.
     avathar.bbpatreon.service.bbaccounts_recorder:
@@ -55,6 +68,7 @@ services:
             - '@language'
             - '@avathar.bbpatreon.service.api_client'
             - '@avathar.bbpatreon.service.group_mapper'
+            - '@avathar.bbpatreon.service.patron_data_provider'
             - '@controller.helper'
             - '%avathar.bbpatreon.tables.patreon_sync%'
             - '%avathar.bbpatreon.tables.patreon_tiers%'
@@ -144,13 +158,10 @@ services:
         class: avathar\bbpatreon\controller\supporters_controller
         arguments:
             - '@config'
-            - '@dbal.conn'
             - '@language'
             - '@template'
             - '@controller.helper'
-            - '%avathar.bbpatreon.tables.patreon_sync%'
-            - '%avathar.bbpatreon.tables.patreon_tiers%'
-            - '%tables.auth_provider_oauth_account_assoc%'
+            - '@avathar.bbpatreon.service.patron_data_provider'
 
     # OAuth callback controller
     avathar.bbpatreon.controller.callback:

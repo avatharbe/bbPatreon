@@ -40,6 +40,9 @@ class listener_test extends \phpbb_test_case
 	protected $group_mapper;
 
 	/** @var \PHPUnit\Framework\MockObject\MockObject */
+	protected $patron_data_provider;
+
+	/** @var \PHPUnit\Framework\MockObject\MockObject */
 	protected $helper;
 
 	public function setUp(): void
@@ -57,6 +60,9 @@ class listener_test extends \phpbb_test_case
 		$this->group_mapper = $this->getMockBuilder('\avathar\bbpatreon\service\group_mapper')
 			->disableOriginalConstructor()
 			->getMock();
+		$this->patron_data_provider = $this->getMockBuilder('\avathar\bbpatreon\service\patron_data_provider')
+			->disableOriginalConstructor()
+			->getMock();
 		$this->helper = $this->getMockBuilder('\phpbb\controller\helper')
 			->disableOriginalConstructor()
 			->getMock();
@@ -67,6 +73,7 @@ class listener_test extends \phpbb_test_case
 			$this->language,
 			$this->api_client,
 			$this->group_mapper,
+			$this->patron_data_provider,
 			$this->helper,
 			'phpbb_patreon_sync',
 			'phpbb_patreon_tiers',
@@ -92,6 +99,69 @@ class listener_test extends \phpbb_test_case
 		$this->assertArrayHasKey('core.oauth_login_after_check_if_provider_id_has_match', $events);
 		$this->assertArrayHasKey('core.permissions', $events);
 		$this->assertCount(5, $events);
+	}
+
+	/**
+	 * add_page_header_links() must do nothing when the supporters page
+	 * is disabled — no point injecting a link to a page that 404s.
+	 */
+	public function test_add_page_header_links_noop_when_disabled()
+	{
+		$this->config = new \phpbb\config\config(array('patreon_supporters_page_enabled' => 0));
+		$this->listener = new \avathar\bbpatreon\event\listener(
+			$this->config,
+			$this->db,
+			$this->language,
+			$this->api_client,
+			$this->group_mapper,
+			$this->patron_data_provider,
+			$this->helper,
+			'phpbb_patreon_sync',
+			'phpbb_patreon_tiers',
+			'phpbb_oauth_accounts'
+		);
+
+		$this->patron_data_provider->expects($this->never())
+			->method('get_public_supporters_count');
+
+		$this->listener->add_page_header_links();
+	}
+
+	/**
+	 * add_page_header_links() delegates the supporter count to
+	 * patron_data_provider rather than querying patreon_sync directly,
+	 * and assigns it to the global template alongside the nav link.
+	 */
+	public function test_add_page_header_links_assigns_count_from_provider()
+	{
+		$this->config = new \phpbb\config\config(array('patreon_supporters_page_enabled' => 1));
+		$this->listener = new \avathar\bbpatreon\event\listener(
+			$this->config,
+			$this->db,
+			$this->language,
+			$this->api_client,
+			$this->group_mapper,
+			$this->patron_data_provider,
+			$this->helper,
+			'phpbb_patreon_sync',
+			'phpbb_patreon_tiers',
+			'phpbb_oauth_accounts'
+		);
+
+		$this->patron_data_provider->method('get_public_supporters_count')->willReturn(5);
+		$this->helper->method('route')->willReturn('/patreon/supporters');
+
+		$template = $this->createMock('\phpbb\template\template');
+		$template->expects($this->once())
+			->method('assign_vars')
+			->with($this->callback(function ($vars) {
+				return $vars['PATREON_SUPPORTERS_COUNT'] === 5
+					&& $vars['S_PATREON_SUPPORTERS'] === true;
+			}));
+
+		$GLOBALS['template'] = $template;
+		$this->listener->add_page_header_links();
+		unset($GLOBALS['template']);
 	}
 
 	/**

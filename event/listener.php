@@ -30,6 +30,9 @@ class listener implements EventSubscriberInterface
 	/** @var \avathar\bbpatreon\service\group_mapper */
 	protected $group_mapper;
 
+	/** @var \avathar\bbpatreon\service\patron_data_provider */
+	protected $patron_data_provider;
+
 	/** @var \phpbb\controller\helper */
 	protected $helper;
 
@@ -54,6 +57,7 @@ class listener implements EventSubscriberInterface
 		\phpbb\language\language $language,
 		\avathar\bbpatreon\service\api_client $api_client,
 		\avathar\bbpatreon\service\group_mapper $group_mapper,
+		\avathar\bbpatreon\service\patron_data_provider $patron_data_provider,
 		\phpbb\controller\helper $helper,
 		string $patreon_sync_table,
 		string $patreon_tiers_table,
@@ -65,6 +69,7 @@ class listener implements EventSubscriberInterface
 		$this->language				= $language;
 		$this->api_client			= $api_client;
 		$this->group_mapper			= $group_mapper;
+		$this->patron_data_provider	= $patron_data_provider;
 		$this->helper				= $helper;
 		$this->patreon_sync_table	= $patreon_sync_table;
 		$this->patreon_tiers_table	= $patreon_tiers_table;
@@ -123,14 +128,8 @@ class listener implements EventSubscriberInterface
 			$this->language->add_lang('common', 'avathar/bbpatreon');
 
 			$this->db->sql_return_on_error(true);
-			$sql = 'SELECT COUNT(*) as cnt FROM ' . $this->patreon_sync_table . "
-				WHERE show_public = 1 AND pledge_status = 'active_patron'";
-			$result = $this->db->sql_query($sql);
-			$row = $this->db->sql_fetchrow($result);
-			$this->db->sql_freeresult($result);
+			$count = $this->patron_data_provider->get_public_supporters_count();
 			$this->db->sql_return_on_error(false);
-
-			$count = $row ? (int) $row['cnt'] : 0;
 
 			global $template;
 			$template->assign_vars([
