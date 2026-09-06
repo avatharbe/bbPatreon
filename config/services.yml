@@ -89,6 +89,7 @@ services:
             - '@user'
             - '@avathar.bbpatreon.service.api_client'
             - '@avathar.bbpatreon.service.group_mapper'
+            - '@pagination'
             - '%avathar.bbpatreon.tables.patreon_sync%'
             - '%avathar.bbpatreon.tables.patreon_tiers%'
             - '%tables.auth_provider_oauth_account_assoc%'

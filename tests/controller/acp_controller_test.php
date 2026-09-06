@@ -15,6 +15,9 @@ use PHPUnit\Framework\TestCase;
 
 class acp_controller_test extends TestCase
 {
+	/** @var \PHPUnit\Framework\MockObject\MockObject */
+	protected $db;
+
 	protected function get_controller(array $config_data = array())
 	{
 		$defaults = array(
@@ -24,7 +27,7 @@ class acp_controller_test extends TestCase
 		);
 
 		$config = new \phpbb\config\config(array_merge($defaults, $config_data));
-		$db = $this->createMock(\phpbb\db\driver\driver_interface::class);
+		$this->db = $this->createMock(\phpbb\db\driver\driver_interface::class);
 		$language = $this->getMockBuilder(\phpbb\language\language::class)->disableOriginalConstructor()->getMock();
 		$log = $this->createMock(\phpbb\log\log_interface::class);
 		$request = $this->createMock(\phpbb\request\request::class);
@@ -32,10 +35,11 @@ class acp_controller_test extends TestCase
 		$user = $this->getMockBuilder(\phpbb\user::class)->disableOriginalConstructor()->getMock();
 		$api_client = $this->getMockBuilder(\avathar\bbpatreon\service\api_client::class)->disableOriginalConstructor()->getMock();
 		$group_mapper = $this->getMockBuilder(\avathar\bbpatreon\service\group_mapper::class)->disableOriginalConstructor()->getMock();
+		$pagination = $this->getMockBuilder(\phpbb\pagination::class)->disableOriginalConstructor()->getMock();
 
 		return new \avathar\bbpatreon\controller\acp_controller(
 			$config,
-			$db,
+			$this->db,
 			$language,
 			$log,
 			$request,
@@ -43,10 +47,99 @@ class acp_controller_test extends TestCase
 			$user,
 			$api_client,
 			$group_mapper,
+			$pagination,
 			'phpbb_patreon_sync',
 			'phpbb_patreon_tiers',
 			'phpbb_oauth_accounts'
 		);
+	}
+
+	/**
+	 * Helper to call the protected get_linked_users_count method.
+	 */
+	protected function get_linked_users_count($controller)
+	{
+		$method = new \ReflectionMethod($controller, 'get_linked_users_count');
+		$method->setAccessible(true);
+		return $method->invoke($controller);
+	}
+
+	/**
+	 * Helper to call the protected get_linked_users method.
+	 */
+	protected function get_linked_users($controller, int $start = 0, int $limit = 0)
+	{
+		$method = new \ReflectionMethod($controller, 'get_linked_users');
+		$method->setAccessible(true);
+		return $method->invoke($controller, $start, $limit);
+	}
+
+	/**
+	 * get_linked_users_count() returns the COUNT(*) result as an int.
+	 */
+	public function test_get_linked_users_count()
+	{
+		$controller = $this->get_controller();
+
+		$this->db->method('sql_query')->willReturn('result');
+		$this->db->method('sql_fetchrow')->willReturn(array('total_linked' => '42'));
+		$this->db->method('sql_freeresult')->willReturn(null);
+
+		$this->assertSame(42, $this->get_linked_users_count($controller));
+	}
+
+	/**
+	 * get_linked_users_count() returns 0 when the table is empty.
+	 */
+	public function test_get_linked_users_count_zero()
+	{
+		$controller = $this->get_controller();
+
+		$this->db->method('sql_query')->willReturn('result');
+		$this->db->method('sql_fetchrow')->willReturn(false);
+		$this->db->method('sql_freeresult')->willReturn(null);
+
+		$this->assertSame(0, $this->get_linked_users_count($controller));
+	}
+
+	/**
+	 * get_linked_users() must use sql_query_limit (not plain sql_query)
+	 * when a limit is given, so the ACP list is actually paginated
+	 * rather than loading every linked patron in one page (issue #22).
+	 */
+	public function test_get_linked_users_uses_query_limit_when_limit_given()
+	{
+		$controller = $this->get_controller();
+
+		$this->db->expects($this->once())
+			->method('sql_query_limit')
+			->with($this->anything(), 25, 50)
+			->willReturn('result');
+		$this->db->expects($this->never())
+			->method('sql_query');
+		$this->db->method('sql_fetchrow')->willReturn(false);
+		$this->db->method('sql_freeresult')->willReturn(null);
+
+		$this->get_linked_users($controller, 50, 25);
+	}
+
+	/**
+	 * get_linked_users() falls back to plain sql_query when no limit is
+	 * given (limit = 0), e.g. for callers that want the full result set.
+	 */
+	public function test_get_linked_users_uses_plain_query_without_limit()
+	{
+		$controller = $this->get_controller();
+
+		$this->db->expects($this->once())
+			->method('sql_query')
+			->willReturn('result');
+		$this->db->expects($this->never())
+			->method('sql_query_limit');
+		$this->db->method('sql_fetchrow')->willReturn(false);
+		$this->db->method('sql_freeresult')->willReturn(null);
+
+		$this->get_linked_users($controller);
 	}
 
 	/**

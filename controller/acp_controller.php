@@ -40,6 +40,12 @@ class acp_controller
 	/** @var \avathar\bbpatreon\service\group_mapper */
 	protected $group_mapper;
 
+	/** @var \phpbb\pagination */
+	protected $pagination;
+
+	/** @var int Number of linked users shown per ACP page. */
+	const LINKED_USERS_PER_PAGE = 25;
+
 	/** @var string */
 	protected $patreon_sync_table;
 
@@ -62,6 +68,7 @@ class acp_controller
 		\phpbb\user $user,
 		\avathar\bbpatreon\service\api_client $api_client,
 		\avathar\bbpatreon\service\group_mapper $group_mapper,
+		\phpbb\pagination $pagination,
 		string $patreon_sync_table,
 		string $patreon_tiers_table,
 		string $oauth_accounts_table
@@ -76,6 +83,7 @@ class acp_controller
 		$this->user					= $user;
 		$this->api_client			= $api_client;
 		$this->group_mapper			= $group_mapper;
+		$this->pagination			= $pagination;
 		$this->patreon_sync_table	= $patreon_sync_table;
 		$this->patreon_tiers_table	= $patreon_tiers_table;
 		$this->oauth_accounts_table	= $oauth_accounts_table;
@@ -122,8 +130,21 @@ class acp_controller
 
 		$s_errors = !empty($errors);
 
-		// Get linked users for the table
-		$linked_users = $this->get_linked_users();
+		// Get linked users for the table (paginated — this list grows
+		// unbounded as free-tier patrons accumulate, see issue #22)
+		$start = $this->request->variable('start', 0);
+		$per_page = self::LINKED_USERS_PER_PAGE;
+		$total_linked_users = $this->get_linked_users_count();
+		$linked_users = $this->get_linked_users($start, $per_page);
+
+		$this->pagination->generate_template_pagination(
+			$this->u_action,
+			'pagination',
+			'start',
+			$total_linked_users,
+			$per_page,
+			$start
+		);
 
 		// Get phpBB groups for the tier mapping dropdowns
 		$groups = $this->get_phpbb_groups();
@@ -418,7 +439,7 @@ class acp_controller
 		return $this->language->lang('ACP_BBPATREON_WEBHOOK_TEST_FAIL', (string) $http_code, $response);
 	}
 
-	protected function get_linked_users(): array
+	protected function get_linked_users(int $start = 0, int $limit = 0): array
 	{
 		$sql = 'SELECT u.user_id, u.username, u.user_colour,
 				oa.oauth_provider_id as patreon_user_id,
@@ -430,7 +451,7 @@ class acp_controller
 			LEFT JOIN ' . $this->patreon_tiers_table . " pt ON (pt.tier_id = ps.tier_id)
 			WHERE oa.provider = 'patreon'
 			ORDER BY u.username ASC";
-		$result = $this->db->sql_query($sql);
+		$result = $limit > 0 ? $this->db->sql_query_limit($sql, $limit, $start) : $this->db->sql_query($sql);
 
 		$users = [];
 		while ($row = $this->db->sql_fetchrow($result))
@@ -450,6 +471,20 @@ class acp_controller
 		$this->db->sql_freeresult($result);
 
 		return $users;
+	}
+
+	/**
+	 * Count all Patreon-linked users, for pagination.
+	 */
+	protected function get_linked_users_count(): int
+	{
+		$sql = 'SELECT COUNT(*) AS total_linked FROM ' . $this->oauth_accounts_table . "
+			WHERE provider = 'patreon'";
+		$result = $this->db->sql_query($sql);
+		$row = $this->db->sql_fetchrow($result);
+		$this->db->sql_freeresult($result);
+
+		return $row ? (int) $row['total_linked'] : 0;
 	}
 
 	protected function get_phpbb_groups(): array

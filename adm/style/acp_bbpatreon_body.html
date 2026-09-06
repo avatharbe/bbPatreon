@@ -214,6 +214,11 @@
 				{% endfor %}
 			</tbody>
 		</table>
+		{% if pagination %}
+		<div class="pagination">
+			{% include 'pagination.html' %}
+		</div>
+		{% endif %}
 		{% else %}
 		<p><em>{{ lang('ACP_BBPATREON_NO_LINKED_USERS') }}</em></p>
 		{% endif %}
