@@ -31,6 +31,11 @@ class main_info
 					'auth'	=> 'ext_avathar/bbpatreon && acl_a_board',
 					'cat'	=> ['ACP_BBPATREON_TITLE'],
 				],
+				'patron_stats' => [
+					'title'	=> 'ACP_BBPATREON_PATRON_STATS',
+					'auth'	=> 'ext_avathar/bbpatreon && acl_a_board',
+					'cat'	=> ['ACP_BBPATREON_TITLE'],
+				],
 			],
 		];
 	}

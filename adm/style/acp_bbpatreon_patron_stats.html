@@ -1,0 +1,52 @@
+<!-- INCLUDE overall_header.html -->
+
+<a id="maincontent"></a>
+
+<h1>{L_ACP_BBPATREON_PATRON_STATS}</h1>
+<p>{L_ACP_BBPATREON_PATRON_STATS_EXPLAIN}</p>
+
+<fieldset>
+	<legend>{L_ACP_BBPATREON_STATS_OVERVIEW}</legend>
+	<table class="table1 zebra-table">
+		<tbody>
+			<tr>
+				<td>{L_ACP_BBPATREON_STATS_ACTIVE_PATRONS}</td>
+				<td style="text-align:right"><strong>{TOTAL_ACTIVE_PATRONS}</strong></td>
+			</tr>
+			<tr>
+				<td>{L_ACP_BBPATREON_STATS_MONTHLY_PLEDGE}</td>
+				<td style="text-align:right"><strong>{TOTAL_PLEDGE_AMOUNT}</strong></td>
+			</tr>
+			<tr>
+				<td>{L_ACP_BBPATREON_STATS_DECLINED_PATRONS}</td>
+				<td style="text-align:right"><strong>{TOTAL_DECLINED_PATRONS}</strong></td>
+			</tr>
+		</tbody>
+	</table>
+</fieldset>
+
+<fieldset>
+	<legend>{L_ACP_BBPATREON_STATS_PER_TIER}</legend>
+	<!-- IF S_HAS_TIER_STATS -->
+	<table class="table1 zebra-table">
+		<thead>
+			<tr>
+				<th>{L_ACP_BBPATREON_TIER}</th>
+				<th>{L_ACP_BBPATREON_STATS_ACTIVE_PATRONS}</th>
+			</tr>
+		</thead>
+		<tbody>
+			<!-- BEGIN tier_stats -->
+			<tr>
+				<td>{tier_stats.TIER_LABEL}</td>
+				<td>{tier_stats.PATRON_COUNT}</td>
+			</tr>
+			<!-- END tier_stats -->
+		</tbody>
+	</table>
+	<!-- ELSE -->
+	<p><em>{L_ACP_BBPATREON_STATS_NO_ACTIVE_PATRONS}</em></p>
+	<!-- ENDIF -->
+</fieldset>
+
+<!-- INCLUDE overall_footer.html -->

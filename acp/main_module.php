@@ -23,7 +23,7 @@ class main_module
 	 * Main ACP module
 	 *
 	 * @param int    $id   The module ID
-	 * @param string $mode The module mode (for example: settings, bbaccounts_integration)
+	 * @param string $mode The module mode (for example: settings, bbaccounts_integration, patron_stats)
 	 * @throws \Exception
 	 */
 	public function main($id, $mode)
@@ -37,6 +37,15 @@ class main_module
 				$controller = $phpbb_container->get('avathar.bbpatreon.controller.bbaccounts_acp');
 				$this->tpl_name   = 'acp_bbpatreon_bbaccounts_integration';
 				$this->page_title = 'ACP_BBPATREON_BBACCOUNTS_INTEGRATION';
+				$controller->set_page_url($this->u_action);
+				$controller->handle();
+				break;
+
+			case 'patron_stats':
+				/** @var \avathar\bbpatreon\controller\patron_stats_acp_controller $controller */
+				$controller = $phpbb_container->get('avathar.bbpatreon.controller.patron_stats_acp');
+				$this->tpl_name   = 'acp_bbpatreon_patron_stats';
+				$this->page_title = 'ACP_BBPATREON_PATRON_STATS';
 				$controller->set_page_url($this->u_action);
 				$controller->handle();
 				break;

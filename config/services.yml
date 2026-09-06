@@ -108,6 +108,17 @@ services:
             - '%avathar.bbpatreon.tables.bbpatreon_credit_rules%'
             - '%core.table_prefix%'
 
+    # ACP controller for the "Patron Stats" mode
+    avathar.bbpatreon.controller.patron_stats_acp:
+        class: avathar\bbpatreon\controller\patron_stats_acp_controller
+        arguments:
+            - '@config'
+            - '@dbal.conn'
+            - '@language'
+            - '@template'
+            - '%avathar.bbpatreon.tables.patreon_sync%'
+            - '%avathar.bbpatreon.tables.patreon_tiers%'
+
     # UCP controller
     avathar.bbpatreon.controller.ucp:
         class: avathar\bbpatreon\controller\ucp_controller
