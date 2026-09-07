@@ -124,11 +124,11 @@ Each tier in the `included` array has an `id` and a `title`.
 }
 ```
 
-To map the Patreon tiers to phpBB usergroups just select the **phpBB user Group** that maps to your tier. 
+To map the Patreon tiers to phpBB usergroups, tick the **checkbox** next to every phpBB group you want that tier to grant. A tier can map to more than one group — for example, a "Gold" tier could grant both a `patron_gold` exclusive-access group and a shared `all_patrons` perks group at once.
 
 When a patron links their account or when a pledge event fires, the extension will:
-- Add the user to the group matching their current tier
-- Remove the user from any other patron-mapped groups they no longer belong to
+- Add the user to every phpBB group mapped to their current tier
+- Remove the user from any other patron-mapped group not mapped to that tier
 
 **Grace Period:** The number of days to wait before removing a user from their patron group after they stop pledging. Set to `0` for immediate removal. During the grace period, the user keeps their group membership even though they are no longer an active patron.
 
@@ -159,12 +159,14 @@ The new permission is `u_patreon_notify`. It is added by the v1.2.4 migration an
 
 ## STEP 6 (Optional) : Make the tier group the patron's default group
 
-By default, bbPatreon adds a patron to their tier-mapped group as a **secondary** group membership — the patron's *default* group (which controls username colour and rank in posts) is left unchanged.
+By default, bbPatreon adds a patron to their tier-mapped group(s) as a **secondary** group membership — the patron's *default* group (which controls username colour and rank in posts) is left unchanged.
 
-If you want the tier-mapped group to ALSO become the patron's primary/default group (so their username takes on the group's colour and rank):
+If you want a tier-mapped group to ALSO become the patron's primary/default group (so their username takes on the group's colour and rank):
 
 - **ACP → Extensions → bbPatreon → Settings**
 - Tick **"Set tier group as default"** → Submit
+
+If a tier maps to more than one group, the group used as the default is whichever one comes first alphabetically by group name — not the order you checked the boxes in. Tip: name your primary/exclusive group so it sorts first if this matters to you.
 
 On demotion (cancellation, grace-period expiry, or tier change), the patron's default group reverts to **Registered users**. Note: any custom default group the user set manually before being promoted is NOT preserved across promote/demote cycles.
 
@@ -204,4 +206,25 @@ If you have the [bbAccounts](https://github.com/avatharbe/bbAccounts) extension 
 
 - **bbAccounts → Reports → User Statement → \[pick a patron]** shows every credit posted to that patron's User Wallets account, with the rule label in the description.
 - **ACP → Admin Logs** has a per-run summary entry (`LOG_BBPATREON_CREDIT_RUN_MANUAL` for button-driven, `LOG_BBPATREON_CREDIT_RUN` for cron-driven) with the period and credited / skipped counts.
+
+## STEP 8 (Optional) : Public Supporters Page
+
+bbPatreon can publish a public page listing patrons who have explicitly opted in to being shown — nobody appears without their own consent, and pledge amounts are never shown unless the patron separately opts in to that too.
+
+### Setup
+
+1. **ACP → Extensions → bbPatreon → Settings**, tick **"Public Supporters Page"** → Submit. This enables the page at `https://yourforum.com/patreon/supporters` and adds a link to it in the forum's navbar menu.
+2. Optionally tick **"Allow pledge amounts on supporters page"** if you want patrons to be able to additionally show their pledge amount.
+
+### Patron opt-in
+
+Once the ACP toggle is on, paying patrons (free-tier patrons cannot opt in) see two checkboxes in **UCP → Patreon**:
+- **"Show me as a supporter"** — adds them to the public page (username, avatar, rank, group, tier name).
+- **"Show my pledge amount"** — only shown if the ACP toggle allows it, and only takes effect if "Show me as a supporter" is also on.
+
+Unlinking a Patreon account automatically removes the patron from the supporters page.
+
+## STEP 9 : ACP Patron Stats Page
+
+**ACP → Extensions → bbPatreon → Patron Stats** gives a quick overview of patron activity without needing to visit Patreon's own creator dashboard: total active patrons, total monthly pledge amount, total declined patrons, and a breakdown of active patrons per tier. This is read-only — nothing to configure here.
 

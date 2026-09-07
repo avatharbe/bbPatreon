@@ -125,12 +125,25 @@ CREATE TABLE phpbb_patreon_tiers (
     tier_label     VARCHAR(255),               -- Human-readable name
     amount_cents   INT UNSIGNED DEFAULT 0,     -- Tier's price point in cents
     currency       VARCHAR(8),
-    group_id       INT UNSIGNED DEFAULT 0,     -- Mapped phpBB group_id
     patron_count   INT UNSIGNED DEFAULT 0,
     published      TINYINT(1)   DEFAULT 1,
     PRIMARY KEY (tier_id)
 );
 ```
+
+### Tier-to-group mapping (`phpbb_patreon_tier_groups`, 1.3.0+)
+
+A tier can map to more than one phpBB group (e.g. a shared "all patrons" perk group plus a tier-specific exclusive group). `patreon_tiers.group_id` was dropped in favour of this many-to-many join table (v1_3_0 added the table and backfilled existing single mappings; v1_3_1 dropped the old column):
+
+```sql
+CREATE TABLE phpbb_patreon_tier_groups (
+    tier_id  VARCHAR(64)  NOT NULL,
+    group_id INT UNSIGNED DEFAULT 0,
+    PRIMARY KEY (tier_id, group_id)
+);
+```
+
+`group_mapper::get_tier_group_map()` returns `tier_id => [group_id, ...]`, ordered alphabetically by group name. When the `bbpatreon_set_default_group` toggle is on and a tier maps to multiple groups, the first group in that alphabetical order is used as the patron's default group — not admin-configurable order, just alphabetical.
 
 ### bbAccounts integration tables (1.2.4+)
 
@@ -177,6 +190,7 @@ patreon_client_secret
 patreon_creator_access_token
 patreon_creator_refresh_token
 patreon_campaign_id
+patreon_currency               -- campaign's currency code, set by "Fetch Campaign" (default: USD)
 patreon_webhook_secret
 patreon_grace_period_days     -- days before demotion after pledge:delete (default: 0)
 patreon_last_cron_sync        -- unix timestamp of last cron run
@@ -187,20 +201,13 @@ auth_oauth_patreon_key        -- synced copy of patreon_client_id (phpBB OAuth c
 auth_oauth_patreon_secret     -- synced copy of patreon_client_secret (phpBB OAuth convention)
 ```
 
+There is no `config_text` usage in this extension — the tier→group mapping lives in the relational `phpbb_patreon_tier_groups` table (see Data Model above), not a serialized config blob.
+
 ### Permissions (1.2.4+)
 
 | Key | Default-granted to | Purpose |
 |---|---|---|
 | `u_patreon_notify` | `ROLE_ADMIN_FULL` | Receive "X linked their Patreon account" notification. Admins can grant to moderator roles or specific groups via ACP → Permissions. |
-
-### ACP Configuration (stored in phpbb_config_text)
-
-These values can exceed the 255-character limit of `phpbb_config.config_value`, so they use `config_text` instead:
-
-```
-patreon_tier_group_map        -- JSON: {"tier_id_1": group_id, "tier_id_2": group_id}
-patreon_tier_labels           -- JSON: {"tier_id_1": "Tier Name", ...} (cached from API)
-```
 
 ---
 
@@ -215,8 +222,9 @@ ext/avathar/bbpatreon/
 │                                        # enable/disable/purge steps for notification type
 │
 ├── config/
-│   ├── parameters.yml                   # Table name: %avathar.bbpatreon.tables.patreon_sync%
-│   ├── routing.yml                      # Routes: /patreon/webhook (POST), /patreon/callback (GET)
+│   ├── parameters.yml                   # Table names: %avathar.bbpatreon.tables.*%
+│   ├── routing.yml                      # Routes: /patreon/webhook (POST), /patreon/callback (GET),
+│   │                                    #         /patreon/supporters (GET, 1.1.0+)
 │   └── services.yml                     # All DI service definitions
 │
 ├── oauth/
@@ -239,25 +247,42 @@ ext/avathar/bbpatreon/
 │   │                                    # validates X-Patreon-Signature (HMAC-MD5)
 │   │                                    # handles: members:pledge:create/update/delete
 │   │                                    # always returns 200 OK (prevents retry storms)
+│   │                                    # fires avathar.bbpatreon.pledge_changed (see events.md)
 │   │
 │   ├── callback.php                     # OAuth callback (GET /patreon/callback)
 │   │                                    # Patreon redirects here after user authorises
 │   │                                    # forwards ?code= to UCP module for processing
 │   │
-│   ├── acp_controller.php              # ACP settings page logic
-│   │                                    # save settings, fetch campaign ID, fetch tiers,
+│   ├── acp_controller.php              # ACP "Settings" mode logic
+│   │                                    # save settings, fetch campaign ID, fetch tiers
+│   │                                    #   (fires avathar.bbpatreon.tiers_updated, 1.3.0+),
 │   │                                    # register/check/test webhook, manual sync,
-│   │                                    # linked users table
+│   │                                    # paginated linked users table (1.3.0+, issue #22),
+│   │                                    # tier→group checkbox mapping (1.3.0+, issue #5)
+│   │
+│   ├── patron_stats_acp_controller.php # ACP "Patron Stats" mode logic (1.3.0+)
+│   │                                    # read-only: active/declined patron counts,
+│   │                                    # total monthly pledge amount, per-tier breakdown —
+│   │                                    # all computed live from patreon_sync
+│   │
+│   ├── bbaccounts_acp_controller.php   # ACP "bbAccounts Integration" mode logic (1.2.4+)
+│   │                                    # credit rule CRUD, "Run credit now" button
+│   │
+│   ├── supporters_controller.php       # Public supporters page (GET /patreon/supporters)
+│   │                                    # 404s when patreon_supporters_page_enabled is off
+│   │                                    # delegates all data/formatting to patron_data_provider
 │   │
 │   └── ucp_controller.php              # UCP Patreon page logic
 │                                        # handles OAuth redirect + callback processing
 │                                        # link/unlink account, display status
+│                                        # supporters opt-in checkboxes (1.1.0+/1.2.0+)
 │                                        # fires patreon_linked notification on link
 │
 ├── event/
 │   └── listener.php                     # Listens on phpBB events
 │                                        # core.user_setup → load language
-│                                        # core.page_header → inject Supporters navbar link
+│                                        # core.page_header → inject Supporters navbar link;
+│                                        #   count delegates to patron_data_provider (1.3.0+)
 │                                        # core.memberlist_team_modify_template_vars
 │                                        #   → inject Patreon tier badge on Team page
 │                                        # core.oauth_login_after_check_if_provider_id_has_match
@@ -281,16 +306,29 @@ ext/avathar/bbpatreon/
 │   │                                    # methods: request(), get_campaign_members(),
 │   │                                    #          register_webhook(), refresh_token()
 │   │
-│   ├── group_mapper.php                 # Resolves tier_id → phpBB group_id from config
-│   │                                    # promotes via group_user_add()
+│   ├── group_mapper.php                 # Resolves tier_id → [phpBB group_id, ...] (1.3.0+: many
+│   │                                    #   groups per tier, via phpbb_patreon_tier_groups)
+│   │                                    # promotes via group_user_add() for every mapped group
 │   │                                    # demotes via group_user_del() (via safe_group_user_del
 │   │                                    #   helper that resets default-group to Registered first
 │   │                                    #   if the bbpatreon_set_default_group toggle is on)
 │   │                                    # handles grace period (skips demotion, cron enforces)
-│   │                                    # handles tier changes (remove old, add new)
+│   │                                    # handles tier changes (remove old groups, add new ones)
 │   │                                    # 1.2.4+: optional default-group toggle calls
 │   │                                    #   group_user_attributes('default', target_group_id, …)
-│   │                                    #   so the patron's username adopts the group colour/rank
+│   │                                    #   so the patron's username adopts the group colour/rank;
+│   │                                    #   1.3.0+: uses the alphabetically-first mapped group
+│   │
+│   ├── patron_data_provider.php         # Public service (1.3.0+, issue #2/#10)
+│   │                                    # get_public_supporters() / get_public_supporters_count()
+│   │                                    # sole source of truth for opted-in supporter data —
+│   │                                    # consumed by supporters_controller AND event/listener.php
+│   │                                    #   (nav badge count), see events.md §1.6
+│   │
+│   ├── tier_data_provider.php           # Public service (1.3.0+, issue #10)
+│   │                                    # get_published_tiers(): label, description, formatted
+│   │                                    #   amount, Patreon subscribe URL — for a third-party
+│   │                                    #   "Membership Tiers" page. See events.md §1.6
 │   │
 │   └── bbaccounts_recorder.php          # bbAccounts integration (1.2.4+)
 │                                        # Nullable DI on @?avathar.bbaccounts.service.ledger
@@ -310,52 +348,70 @@ ext/avathar/bbpatreon/
 │                                        #   from patreon_tiers (1.2.4+; previously showed raw ID)
 │
 ├── migrations/
-│   ├── v1_0_0_initial.php              # Creates phpbb_patreon_sync table
-│   │                                    # Adds config and config_text keys
+│   ├── v1_0_0_initial.php              # Creates phpbb_patreon_sync, phpbb_patreon_tiers
+│   │                                    # Adds the patreon_* config keys
 │   │                                    # Registers ACP module (under ACP_CAT_DOT_MODS)
 │   │                                    # Registers UCP module
-│   ├── v1_1_0_supporters_page.php      # Adds public supporters page schema + config
+│   ├── v1_1_0_supporters_page.php      # Adds show_public column + supporters page config
 │   ├── v1_2_0_show_pledge.php          # Adds show_pledge_public column + config toggle
 │   ├── v1_2_1_bbaccounts_integration.php  # 1.2.4 series — adds bbpatreon_credit_rules
 │   │                                        # table + bbaccounts_integration ACP mode
 │   ├── v1_2_2_credit_log.php           # Adds bbpatreon_credit_log (outbox idempotency)
 │   ├── v1_2_3_notification_perm.php    # Adds u_patreon_notify permission + grant
-│   └── v1_2_4_default_group.php        # Adds bbpatreon_set_default_group config flag
+│   ├── v1_2_4_default_group.php        # Adds bbpatreon_set_default_group config flag
+│   ├── v1_2_5_patron_stats_page.php    # Registers the "Patron Stats" ACP mode (1.3.0)
+│   ├── v1_3_0_tier_group_join.php      # Adds phpbb_patreon_tier_groups; backfills existing
+│   │                                    #   single group_id mappings into it (issue #5)
+│   └── v1_3_1_drop_tier_group_id.php   # Drops patreon_tiers.group_id — the join table is
+│                                        #   now the sole source of truth (issue #5)
 │
 ├── acp/
 │   ├── main_info.php                    # ACP module metadata
-│   │                                    # Modes: settings, bbaccounts_integration (1.2.4+)
+│   │                                    # Modes: settings, bbaccounts_integration (1.2.4+),
+│   │                                    #        patron_stats (1.3.0+)
 │   └── main_module.php                  # ACP module class
 │                                        # Dispatches on $mode:
 │                                        #   settings → acp_controller::display_options
 │                                        #   bbaccounts_integration → bbaccounts_acp_controller::handle
+│                                        #   patron_stats → patron_stats_acp_controller::handle
 │
 ├── ucp/
 │   ├── main_info.php                    # UCP module metadata (mode: settings)
 │   └── main_module.php                  # UCP module class → delegates to ucp_controller
 │
 ├── adm/style/
-│   └── acp_bbpatreon_body.html          # ACP template (Twig)
-│                                        # - Overview panel (collapsible)
-│                                        # - API credentials fieldset
-│                                        # - Webhook fieldset with URL, secret, register/check/test
-│                                        # - Tier mapping table with Fetch Tiers button
-│                                        # - Linked users table
-│                                        # - Submit + Sync Now buttons
+│   ├── acp_bbpatreon_body.html          # ACP "Settings" template (Twig)
+│   │                                    # - Overview panel (collapsible)
+│   │                                    # - API credentials fieldset
+│   │                                    # - Webhook fieldset with URL, secret, register/check/test
+│   │                                    # - Tier mapping table: checkbox list per tier (1.3.0+)
+│   │                                    # - Paginated linked users table (1.3.0+, issue #22)
+│   │                                    # - Submit + Sync Now buttons
+│   ├── acp_bbpatreon_patron_stats.html  # ACP "Patron Stats" template (1.3.0+, old-style syntax)
+│   └── acp_bbpatreon_bbaccounts_integration.html  # ACP "bbAccounts Integration" template (1.2.4+)
 │
 ├── styles/prosilver/template/
-│   └── ucp_bbpatreon_body.html          # UCP template (Twig)
-│                                        # - Linked: shows tier, status, pledge, unlink button
-│                                        # - Not linked: shows link button (form POST)
+│   ├── ucp_bbpatreon_body.html          # UCP template (Twig)
+│   │                                    # - Linked: shows tier, status, pledge, unlink button
+│   │                                    # - Not linked: shows link button (form POST)
+│   │                                    # - Supporters opt-in checkboxes (1.1.0+/1.2.0+)
+│   ├── supporters_body.html             # Public supporters page template (1.1.0+)
+│   │                                    # - avathar_bbpatreon_supporters_body_before/_after
+│   │                                    #   template events (1.3.0+, see events.md §1.7)
+│   └── event/
+│       ├── navbar_header_quick_links_after.html   # Supporters nav link (quick links menu)
+│       └── overall_header_navigation_append.html  # Supporters nav link (sandwich menu)
 │
 ├── language/{en,nl,de,fr,es,pt}/
 │   ├── common.php                       # OAuth provider title, notifications, log entries
-│   ├── info_acp_bbpatreon.php           # ACP labels, help text, status messages
-│   └── info_ucp_bbpatreon.php           # UCP labels, status messages
+│   ├── info_acp_bbpatreon.php           # ACP "Settings" labels, help text, status messages
+│   ├── info_ucp_bbpatreon.php           # UCP labels, status messages
+│   ├── info_acp_bbaccounts_integration.php  # ACP "bbAccounts Integration" mode labels (1.2.4+)
+│   └── info_acp_bbpatreon_patron_stats.php  # ACP "Patron Stats" mode labels (1.3.0+; non-English
+│                                             #   files are English placeholders pending translation)
 │
-├── tests/                               # PHPUnit test suite (see tests/tests.md)
-├── docs/                                # User documentation
-└── contrib/                             # This architecture document
+├── tests/                               # PHPUnit test suite (see contrib/TESTING.md)
+└── contrib/                             # Architecture, user docs, testing guide, events/API contract
 ```
 
 ---
@@ -434,13 +490,20 @@ On 401, automatically calls `refresh_token()` and retries once.
 
 ### Group Mapper (`service/group_mapper.php`)
 
-Reads tier→group mappings from `phpbb_patreon_tiers.group_id` to resolve `tier_id → phpbb_group_id`.
+Reads tier→groups mappings from `phpbb_patreon_tier_groups` (1.3.0+) to resolve `tier_id → [phpbb_group_id, ...]` — a tier can map to more than one group (issue #5). `get_tier_group_map()` orders each tier's groups alphabetically by group name, so the first element is well-defined as that tier's "primary" group.
 
-- **Promotion:** `group_user_add()` — adds user to tier group
+- **Promotion:** `group_user_add()` — adds the user to every group mapped to their tier
 - **Demotion:** `safe_group_user_del()` helper — wraps phpBB's `group_user_del()`. When the `bbpatreon_set_default_group` config flag is on, checks whether the group being removed is the user's current default; if so, resets default to the Registered users group first (otherwise the user would be left with an invalid default group_id pointing at a group they're no longer in).
-- **Tier change:** remove from old group via `safe_group_user_del`, add to new via `group_user_add`
+- **Tier change:** remove from any group not mapped to the new tier via `safe_group_user_del`, add every group mapped to the new tier via `group_user_add`
 - **Grace period:** when status is `former_patron`/`declined_patron` and grace_period > 0, demotion is skipped; the nightly cron enforces it by checking `last_synced_at + grace_days < now()`
-- **Default-group toggle (1.2.4+):** when `bbpatreon_set_default_group=1`, promotion also calls `group_user_attributes('default', target_group_id, …)` so the patron's username takes on the tier group's colour and rank. Demotion resets the default to Registered users (custom pre-promotion default groups are not preserved across cycles).
+- **Default-group toggle (1.2.4+):** when `bbpatreon_set_default_group=1`, promotion also calls `group_user_attributes('default', target_group_id, …)` so the patron's username takes on that group's colour and rank. 1.3.0+: when a tier maps to multiple groups, `target_group_id` is the alphabetically-first one. Demotion resets the default to Registered users (custom pre-promotion default groups are not preserved across cycles).
+
+### Public Data Provider Services (`service/patron_data_provider.php`, `service/tier_data_provider.php`, 1.3.0+)
+
+Two public DI services documented as a stable API contract in `contrib/events.md` §1.6, so other extensions can read bbPatreon data without querying its tables directly:
+
+- **`patron_data_provider`** — `get_public_supporters()` / `get_public_supporters_count()`. Enforces the opt-in consent check (`show_public=1`, `active_patron` only) itself, so a caller can't accidentally leak non-consented data. Consumed by both `supporters_controller` (the public page) and `event/listener.php` (the nav-link supporter-count badge) — the same extraction that made this a public service also removed the last two direct-query call sites for this data.
+- **`tier_data_provider`** — `get_published_tiers()`. Returns the catalogue of `published=1` tiers with a ready-to-use Patreon subscribe URL, for a third-party "Membership Tiers" page (e.g. via `phpbb/pages`). Paired with the `avathar.bbpatreon.tiers_updated` PHP event (fired when the ACP "Fetch Tiers" action refreshes the catalogue) so a consumer knows when to invalidate anything it cached.
 
 ### bbAccounts Recorder (`service/bbaccounts_recorder.php`, 1.2.4+)
 
@@ -501,13 +564,22 @@ ACP has a "Register via API" button that POSTs to `/api/oauth2/v2/webhooks`.
 
 ## ACP Features
 
+### "Settings" mode
 - **API Credentials:** Client ID, Client Secret, Creator tokens, Campaign ID with "Fetch" button
 - **Webhook:** URL display (copyable), secret field, Register/Check/Test buttons
-- **Tier Mapping:** "Fetch Tiers" button loads tiers from API with names; admin selects phpBB group per tier
+- **Tier Mapping:** "Fetch Tiers" button loads tiers from API with names; admin ticks one or more phpBB groups per tier (1.3.0+, issue #5)
 - **Grace Period:** configurable days before demotion
-- **Linked Users:** table showing username, Patreon ID, tier, status, pledge, timestamps
+- **Default Group toggle:** optionally makes a tier's (alphabetically-first, if multiple) mapped group the patron's default group
+- **Supporters Page toggle:** enables the public `/patreon/supporters` page and its pledge-amount sub-toggle
+- **Linked Users:** paginated table (25/page, 1.3.0+, issue #22) showing username, Patreon ID, tier, status, pledge, timestamps
 - **Sync Now:** manual full reconciliation button
 - **Collapsible Help:** every section has a "How does this work?" toggle with detailed explanation
+
+### "Patron Stats" mode (1.3.0+, issue #4)
+Read-only overview computed live from `patreon_sync`: active/declined patron counts, total monthly pledge amount, active patrons per tier.
+
+### "bbAccounts Integration" mode (1.2.4+)
+Credit rule CRUD (expense account, wallet account, amount-per-dollar) and a "Run credit now" button. See STEP 7 in `USERDOC.md`.
 
 ---
 

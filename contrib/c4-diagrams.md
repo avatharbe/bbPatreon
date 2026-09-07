@@ -34,7 +34,7 @@ C4Container
         Container(phpbb, "phpBB Core", "PHP", "Forum engine, user/group management, OAuth framework, cron scheduler")
         Container(ext, "bbPatreon Extension", "PHP", "Patreon integration: OAuth, webhooks, sync, group mapping, optional bbAccounts recorder")
         Container(bbacc, "bbAccounts Extension (optional)", "PHP", "Double-entry ledger; receives credit journal entries from bbPatreon when both extensions are installed")
-        ContainerDb(db, "MySQL Database", "MySQL", "phpBB tables + bbPatreon tables (patreon_sync, patreon_tiers, bbpatreon_credit_rules, bbpatreon_credit_log) + bbAccounts tables")
+        ContainerDb(db, "MySQL Database", "MySQL", "phpBB tables + bbPatreon tables (patreon_sync, patreon_tiers, patreon_tier_groups, bbpatreon_credit_rules, bbpatreon_credit_log) + bbAccounts tables")
     }
 
     System_Ext(patreon, "Patreon API v2", "OAuth2, Campaigns, Members, Webhooks")
@@ -55,21 +55,25 @@ C4Component
     title Component Diagram — bbPatreon Extension
 
     Container_Boundary(ext, "bbPatreon Extension") {
-        Component(ucp, "UCP Controller", "PHP", "Link/unlink Patreon account, OAuth redirect & callback processing")
-        Component(acp, "ACP Controller", "PHP", "Settings, tier mapping, webhook management, manual sync, linked users")
+        Component(ucp, "UCP Controller", "PHP", "Link/unlink Patreon account, OAuth redirect & callback processing, supporters opt-in")
+        Component(acp, "ACP Controller", "PHP", "Settings, tier→groups checkbox mapping (1.3.0+), webhook management, manual sync, paginated linked users (1.3.0+)")
+        Component(acp_stats, "Patron Stats ACP Controller", "PHP", "1.3.0+: read-only patron/pledge/per-tier overview")
         Component(acp_bbacc, "bbAccounts ACP Controller", "PHP", "1.2.4+: rule CRUD + 'Run credit now' button for the bbAccounts integration mode")
+        Component(supporters, "Supporters Controller", "PHP", "GET /patreon/supporters — public page, delegates to patron_data_provider")
         Component(webhook, "Webhook Controller", "PHP", "POST /patreon/webhook — validates HMAC-MD5 signature, dispatches pledge events")
         Component(callback, "Callback Controller", "PHP", "GET /patreon/callback — forwards OAuth code to UCP")
         Component(oauth_svc, "OAuth Service", "PHP", "PHPoAuthLib service for Patreon OAuth2 endpoints")
         Component(api_client, "API Client", "PHP", "Curl-based Patreon API v2 wrapper, auto-refreshes on 401")
-        Component(group_mapper, "Group Mapper", "PHP", "Resolves tier_id to phpBB group_id, promotes/demotes users, optional default-group toggle (1.2.4+)")
+        Component(group_mapper, "Group Mapper", "PHP", "1.3.0+: resolves tier_id to [phpBB group_id, ...] (many-to-many), promotes/demotes users across all mapped groups, optional default-group toggle (1.2.4+, uses alphabetically-first group)")
+        Component(patron_provider, "Patron Data Provider", "PHP", "1.3.0+: public service — opted-in supporter data, consent enforced internally")
+        Component(tier_provider, "Tier Data Provider", "PHP", "1.3.0+: public service — published tier catalogue + Patreon subscribe URLs")
         Component(recorder, "bbAccounts Recorder", "PHP", "1.2.4+: posts monthly journal entries via @?avathar.bbaccounts.service.ledger; outbox idempotency via bbpatreon_credit_log")
         Component(cron, "Cron Sync Task", "PHP", "Nightly reconciliation — paginated member fetch, group fix-up, grace enforcement, end-of-run bbAccounts credit invocation")
         Component(notification, "Notification", "PHP", "Alerts users with u_patreon_notify (1.2.4+; default admins only) when a user links Patreon")
         Component(listener, "Event Listener", "PHP", "Hooks into phpBB events: language load, OAuth login sync, navbar/team-page injection, core.permissions registration")
     }
 
-    ContainerDb(db, "Database", "MySQL", "phpbb_patreon_sync, phpbb_patreon_tiers, phpbb_bbpatreon_credit_rules, phpbb_bbpatreon_credit_log, phpbb_oauth_accounts, phpbb_config")
+    ContainerDb(db, "Database", "MySQL", "phpbb_patreon_sync, phpbb_patreon_tiers, phpbb_patreon_tier_groups, phpbb_bbpatreon_credit_rules, phpbb_bbpatreon_credit_log, phpbb_oauth_accounts, phpbb_config")
     System_Ext(patreon, "Patreon API v2", "OAuth2 + REST API + Webhooks")
     System(bbacc_ledger, "bbAccounts Ledger Service (optional)", "@avathar.bbaccounts.service.ledger — accepts balanced double-entry journal entries from sibling extensions")
 
@@ -86,6 +90,9 @@ C4Component
     Rel(acp, group_mapper, "Manual sync triggers group updates")
     Rel(acp_bbacc, recorder, "Run credit now → credit_active_patrons_for_period")
     Rel(acp_bbacc, db, "CRUD on bbpatreon_credit_rules")
+    Rel(acp_stats, db, "Live aggregate queries on patreon_sync")
+    Rel(supporters, patron_provider, "get_public_supporters()")
+    Rel(listener, patron_provider, "get_public_supporters_count() for the nav-link badge")
     Rel(cron, api_client, "GET /campaigns/{id}/members (paginated)")
     Rel(cron, group_mapper, "Reconciles all group memberships")
     Rel(cron, db, "Upserts sync rows, marks orphans")
