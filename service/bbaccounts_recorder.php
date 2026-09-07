@@ -191,8 +191,8 @@ class bbaccounts_recorder
 	{
 		$sql = 'SELECT log_id
 			FROM ' . $this->credit_log_table . "
-			WHERE rule_id = " . $rule_id . "
-				AND user_id = " . $user_id . "
+			WHERE rule_id = " . (int) $rule_id . "
+				AND user_id = " . (int) $user_id . "
 				AND period = '" . $this->db->sql_escape($period_ymd) . "'";
 		$result = $this->db->sql_query_limit($sql, 1);
 		$found = $this->db->sql_fetchfield('log_id', false, $result);

@@ -219,7 +219,7 @@ class group_mapper
 	protected function get_user_default_group(int $user_id): int
 	{
 		$sql = 'SELECT group_id FROM ' . USERS_TABLE . '
-			WHERE user_id = ' . $user_id;
+			WHERE user_id = ' . (int) $user_id;
 		$result = $this->db->sql_query($sql);
 		$row = $this->db->sql_fetchrow($result);
 		$this->db->sql_freeresult($result);
