@@ -741,7 +741,7 @@ class acp_controller
 					 *
 					 * @event avathar.bbpatreon.tiers_updated
 					 * @var array	tier_ids	Patreon tier IDs that were added or updated
-					 * @since unreleased
+					 * @since 1.3.0
 					 */
 					$tier_ids = array_keys($tiers);
 					$vars = ['tier_ids'];
