@@ -36,6 +36,7 @@ class acp_controller_test extends TestCase
 		$api_client = $this->getMockBuilder(\avathar\bbpatreon\service\api_client::class)->disableOriginalConstructor()->getMock();
 		$group_mapper = $this->getMockBuilder(\avathar\bbpatreon\service\group_mapper::class)->disableOriginalConstructor()->getMock();
 		$pagination = $this->getMockBuilder(\phpbb\pagination::class)->disableOriginalConstructor()->getMock();
+		$dispatcher = $this->getMockBuilder(\phpbb\event\dispatcher_interface::class)->getMock();
 
 		return new \avathar\bbpatreon\controller\acp_controller(
 			$config,
@@ -48,6 +49,7 @@ class acp_controller_test extends TestCase
 			$api_client,
 			$group_mapper,
 			$pagination,
+			$dispatcher,
 			'phpbb_patreon_sync',
 			'phpbb_patreon_tiers',
 			'phpbb_oauth_accounts'

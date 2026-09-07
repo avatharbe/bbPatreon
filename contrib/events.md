@@ -45,6 +45,16 @@ public function on_pledge_changed($event)
 }
 ```
 
+#### `avathar.bbpatreon.tiers_updated`
+
+Fired after the ACP "Fetch Tiers" action has refreshed the tier catalogue from Patreon (`patreon_tiers` upserted). There's no equivalent event for individual tier reads — this fires only when the catalogue itself changes, so a consumer knows when to invalidate a cache built from `tier_data_provider` (see 1.6) rather than re-fetching it on every page load.
+
+- **Placement:** `controller\acp_controller::ExtractTiers()`
+- **Since:** unreleased
+- **Arguments:**
+  - `tier_ids` (string[]) — Patreon tier IDs that were added or updated in this run
+- **Known listeners:** none
+
 ### 1.2 Routes
 
 | Route name | Path | Method | Purpose |
@@ -96,6 +106,26 @@ foreach ($provider->get_public_supporters() as $supporter)
 {
     // render $supporter['username'], $supporter['tier_label'], etc.
     // in your own template — no query, no consent logic to duplicate.
+}
+```
+
+#### `avathar.bbpatreon.service.tier_data_provider`
+
+The supported way for another extension to read the published Patreon tier catalogue — e.g. to render a "Membership Tiers" page (via `phpbb/pages` or a custom controller) with "Subscribe on Patreon" links, without calling the Patreon API directly. Pair with the `avathar.bbpatreon.tiers_updated` event (see 1.1) to know when to invalidate anything you cache from it.
+
+- **Class:** `\avathar\bbpatreon\service\tier_data_provider`
+- **Since:** unreleased
+- **Methods:**
+  - `get_published_tiers(): array` — one entry per tier with `published = 1` (retired tiers are excluded), ordered cheapest first: `tier_id` (string), `tier_label` (string), `description` (string), `amount` (string — formatted with the tier's currency), `amount_cents` (int), `subscribe_url` (string — Patreon's "join at this tier" checkout link, or `''` if no campaign is configured yet).
+
+**Example usage:**
+```php
+/** @var \avathar\bbpatreon\service\tier_data_provider $provider */
+$provider = $phpbb_container->get('avathar.bbpatreon.service.tier_data_provider');
+
+foreach ($provider->get_published_tiers() as $tier)
+{
+    // render $tier['tier_label'], $tier['amount'], link to $tier['subscribe_url']
 }
 ```
 

@@ -47,6 +47,16 @@ services:
             - '%avathar.bbpatreon.tables.patreon_tiers%'
             - '%tables.auth_provider_oauth_account_assoc%'
 
+    # Public tier catalogue provider — the supported way for other
+    # extensions to read published Patreon tier info (e.g. to render a
+    # "Membership Tiers" page). See contrib/events.md.
+    avathar.bbpatreon.service.tier_data_provider:
+        class: avathar\bbpatreon\service\tier_data_provider
+        arguments:
+            - '@config'
+            - '@dbal.conn'
+            - '%avathar.bbpatreon.tables.patreon_tiers%'
+
     # bbAccounts integration recorder — nullable ledger injection makes
     # bbpatreon work fine when bbAccounts is absent.
     avathar.bbpatreon.service.bbaccounts_recorder:
@@ -104,6 +114,7 @@ services:
             - '@avathar.bbpatreon.service.api_client'
             - '@avathar.bbpatreon.service.group_mapper'
             - '@pagination'
+            - '@dispatcher'
             - '%avathar.bbpatreon.tables.patreon_sync%'
             - '%avathar.bbpatreon.tables.patreon_tiers%'
             - '%tables.auth_provider_oauth_account_assoc%'

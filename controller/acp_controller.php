@@ -43,6 +43,9 @@ class acp_controller
 	/** @var \phpbb\pagination */
 	protected $pagination;
 
+	/** @var \phpbb\event\dispatcher_interface */
+	protected $dispatcher;
+
 	/** @var int Number of linked users shown per ACP page. */
 	const LINKED_USERS_PER_PAGE = 25;
 
@@ -69,6 +72,7 @@ class acp_controller
 		\avathar\bbpatreon\service\api_client $api_client,
 		\avathar\bbpatreon\service\group_mapper $group_mapper,
 		\phpbb\pagination $pagination,
+		\phpbb\event\dispatcher_interface $dispatcher,
 		string $patreon_sync_table,
 		string $patreon_tiers_table,
 		string $oauth_accounts_table
@@ -84,6 +88,7 @@ class acp_controller
 		$this->api_client			= $api_client;
 		$this->group_mapper			= $group_mapper;
 		$this->pagination			= $pagination;
+		$this->dispatcher			= $dispatcher;
 		$this->patreon_sync_table	= $patreon_sync_table;
 		$this->patreon_tiers_table	= $patreon_tiers_table;
 		$this->oauth_accounts_table	= $oauth_accounts_table;
@@ -726,6 +731,21 @@ class acp_controller
 						}
 						$this->db->sql_query($sql);
 					}
+
+					/**
+					 * Event fired after the ACP "Fetch Tiers" action has
+					 * refreshed the tier catalogue from Patreon.
+					 *
+					 * Allows other extensions to react to catalogue changes
+					 * (e.g. invalidate a cached "Membership Tiers" page).
+					 *
+					 * @event avathar.bbpatreon.tiers_updated
+					 * @var array	tier_ids	Patreon tier IDs that were added or updated
+					 * @since unreleased
+					 */
+					$tier_ids = array_keys($tiers);
+					$vars = ['tier_ids'];
+					extract($this->dispatcher->trigger_event('avathar.bbpatreon.tiers_updated', compact($vars)));
 
 					trigger_error($this->language->lang('ACP_BBPATREON_FETCH_TIERS_DONE', count($tiers)) . adm_back_link($this->u_action));
 				}
