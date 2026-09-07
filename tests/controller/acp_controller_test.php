@@ -52,6 +52,7 @@ class acp_controller_test extends TestCase
 			$dispatcher,
 			'phpbb_patreon_sync',
 			'phpbb_patreon_tiers',
+			'phpbb_patreon_tier_groups',
 			'phpbb_oauth_accounts'
 		);
 	}

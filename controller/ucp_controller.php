@@ -193,11 +193,11 @@ class ucp_controller
 			$this->db->sql_freeresult($result);
 		}
 
-		// Look up assigned group name if linked and has a tier
+		// Look up assigned group name(s) if linked and has a tier
 		$group_name = '';
 		if ($is_linked && !empty($sync_data['tier_id']))
 		{
-			$group_name = $this->get_assigned_group_name($sync_data['tier_id']);
+			$group_name = $this->get_assigned_group_names($sync_data['tier_id']);
 		}
 
 		$s_errors = !empty($errors);
@@ -515,28 +515,32 @@ class ucp_controller
 	}
 
 	/**
-	 * Look up the phpBB group name assigned to a tier.
+	 * Look up the phpBB group name(s) assigned to a tier, comma-joined.
 	 */
-	protected function get_assigned_group_name(string $tier_id): string
+	protected function get_assigned_group_names(string $tier_id): string
 	{
-		$sql = 'SELECT g.group_name
-			FROM ' . $this->patreon_tiers_table . ' pt
-			JOIN ' . GROUPS_TABLE . ' g ON (g.group_id = pt.group_id)
-			WHERE pt.tier_id = \'' . $this->db->sql_escape($tier_id) . '\'
-				AND pt.group_id > 0';
-		$result = $this->db->sql_query($sql);
-		$row = $this->db->sql_fetchrow($result);
-		$this->db->sql_freeresult($result);
-
-		if (!$row)
+		$group_ids = $this->group_mapper->get_tier_group_map()[$tier_id] ?? [];
+		if (empty($group_ids))
 		{
 			return '';
 		}
 
-		// phpBB stores group names as language keys for built-in groups
-		return $this->language->is_set('G_' . $row['group_name'])
-			? $this->language->lang('G_' . $row['group_name'])
-			: $row['group_name'];
+		$sql = 'SELECT group_name FROM ' . GROUPS_TABLE . '
+			WHERE ' . $this->db->sql_in_set('group_id', $group_ids) . '
+			ORDER BY group_name ASC';
+		$result = $this->db->sql_query($sql);
+
+		$names = [];
+		while ($row = $this->db->sql_fetchrow($result))
+		{
+			// phpBB stores group names as language keys for built-in groups
+			$names[] = $this->language->is_set('G_' . $row['group_name'])
+				? $this->language->lang('G_' . $row['group_name'])
+				: $row['group_name'];
+		}
+		$this->db->sql_freeresult($result);
+
+		return implode(', ', $names);
 	}
 
 	/**

@@ -88,6 +88,7 @@ $lang = array_merge($lang, [
 	'ACP_BBPATREON_TIER_ID'					=> 'Patreon Stufen-ID',
 	'ACP_BBPATREON_PHPBB_GROUP'				=> 'phpBB-Gruppe',
 	'ACP_BBPATREON_SELECT_GROUP'			=> '-- Gruppe auswählen --',
+	'ACP_BBPATREON_MULTI_GROUP_EXPLAIN'		=> 'Select one or more groups. The patron is added to every group checked for their tier.',
 	'ACP_BBPATREON_ADD_TIER_MAP'			=> 'Stufen-Zuordnung hinzufügen',
 	'ACP_BBPATREON_GRACE_PERIOD'			=> 'Gnadenfrist',
 	'ACP_BBPATREON_GRACE_PERIOD_EXPLAIN'	=> 'Anzahl der Tage, die gewartet wird, bevor ein Benutzer aus seiner Patrongruppe entfernt wird. Auf 0 setzen für sofortige Entfernung.',

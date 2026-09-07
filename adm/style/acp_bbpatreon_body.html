@@ -142,12 +142,13 @@
 					<td>{{ row.AMOUNT }}</td>
 					<td>{{ row.PATRON_COUNT }}</td>
 					<td>
-						<select name="group_ids[]">
-							<option value="0">{{ lang('ACP_BBPATREON_SELECT_GROUP') }}</option>
-							{% for group in groups %}
-							<option value="{{ group.GROUP_ID }}"{% if group.GROUP_ID == row.GROUP_ID %} selected="selected"{% endif %}>{{ group.GROUP_NAME }}</option>
-							{% endfor %}
-						</select>
+						{% for opt in row.group_options %}
+						<label class="tier-group-option">
+							<input type="checkbox" name="group_ids[{{ row.TIER_INDEX }}][]" value="{{ opt.GROUP_ID }}"{% if opt.CHECKED %} checked="checked"{% endif %}>
+							{{ opt.GROUP_NAME }}
+						</label><br>
+						{% endfor %}
+						<span class="small">{{ lang('ACP_BBPATREON_MULTI_GROUP_EXPLAIN') }}</span>
 					</td>
 					<td><a href="#" class="tier-map-remove" onclick="this.closest('tr').remove(); return false;">{{ lang('REMOVE') }}</a></td>
 				</tr>

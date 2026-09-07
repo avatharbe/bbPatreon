@@ -1,5 +1,6 @@
 parameters:
     avathar.bbpatreon.tables.patreon_sync: '%core.table_prefix%patreon_sync'
     avathar.bbpatreon.tables.patreon_tiers: '%core.table_prefix%patreon_tiers'
+    avathar.bbpatreon.tables.patreon_tier_groups: '%core.table_prefix%patreon_tier_groups'
     avathar.bbpatreon.tables.bbpatreon_credit_rules: '%core.table_prefix%bbpatreon_credit_rules'
     avathar.bbpatreon.tables.bbpatreon_credit_log: '%core.table_prefix%bbpatreon_credit_log'

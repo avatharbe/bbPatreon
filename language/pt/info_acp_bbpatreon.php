@@ -88,6 +88,7 @@ $lang = array_merge($lang, [
 	'ACP_BBPATREON_TIER_ID'					=> 'ID do nível Patreon',
 	'ACP_BBPATREON_PHPBB_GROUP'				=> 'Grupo phpBB',
 	'ACP_BBPATREON_SELECT_GROUP'			=> '-- Selecionar grupo --',
+	'ACP_BBPATREON_MULTI_GROUP_EXPLAIN'		=> 'Select one or more groups. The patron is added to every group checked for their tier.',
 	'ACP_BBPATREON_ADD_TIER_MAP'			=> 'Adicionar mapeamento de nível',
 	'ACP_BBPATREON_GRACE_PERIOD'			=> 'Período de graça',
 	'ACP_BBPATREON_GRACE_PERIOD_EXPLAIN'	=> 'Dias de espera antes de remover um utilizador do seu grupo de patrono. Defina como 0 para remoção imediata.',

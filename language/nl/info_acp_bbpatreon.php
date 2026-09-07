@@ -92,6 +92,7 @@ $lang = array_merge($lang, [
 	'ACP_BBPATREON_TIER_ID'					=> 'Patreon Tier-ID',
 	'ACP_BBPATREON_PHPBB_GROUP'				=> 'phpBB-groep',
 	'ACP_BBPATREON_SELECT_GROUP'			=> '-- Selecteer groep --',
+	'ACP_BBPATREON_MULTI_GROUP_EXPLAIN'		=> 'Select one or more groups. The patron is added to every group checked for their tier.',
 	'ACP_BBPATREON_ADD_TIER_MAP'			=> 'Tier-koppeling toevoegen',
 	'ACP_BBPATREON_GRACE_PERIOD'			=> 'Gratieperiode',
 	'ACP_BBPATREON_GRACE_PERIOD_EXPLAIN'	=> 'Aantal dagen wachten voordat een gebruiker uit zijn patrongroep wordt verwijderd nadat hij opzegt of zijn betaling mislukt. Tijdens deze periode behoudt de gebruiker zijn groepstoegang. Stel in op 0 voor onmiddellijke verwijdering. De nachtelijke cron-taak handhaaft het verlopen van de gratieperiode.',

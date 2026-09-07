@@ -40,9 +40,10 @@ class group_mapper_test extends \phpbb_test_case
 	}
 
 	/**
-	 * Helper: build a group_mapper with the given config and tier rows.
+	 * Helper: build a group_mapper with the given config and tier-group
+	 * join rows (as returned by the INNER JOIN with the groups table).
 	 */
-	protected function get_mapper(array $config_data = array(), array $tier_rows = null)
+	protected function get_mapper(array $config_data = array(), array $tier_group_rows = null)
 	{
 		global $phpbb_root_path, $phpEx;
 
@@ -52,9 +53,9 @@ class group_mapper_test extends \phpbb_test_case
 
 		$this->config = new \phpbb\config\config(array_merge($defaults, $config_data));
 
-		if ($tier_rows === null)
+		if ($tier_group_rows === null)
 		{
-			$tier_rows = array(
+			$tier_group_rows = array(
 				array('tier_id' => 'tier-1', 'group_id' => '5'),
 				array('tier_id' => 'tier-2', 'group_id' => '6'),
 			);
@@ -64,10 +65,10 @@ class group_mapper_test extends \phpbb_test_case
 
 		$this->db->method('sql_query')->willReturn(true);
 		$this->db->method('sql_fetchrow')
-			->willReturnCallback(function () use (&$row_index, $tier_rows) {
-				if ($row_index < count($tier_rows))
+			->willReturnCallback(function () use (&$row_index, $tier_group_rows) {
+				if ($row_index < count($tier_group_rows))
 				{
-					return $tier_rows[$row_index++];
+					return $tier_group_rows[$row_index++];
 				}
 				return false;
 			});
@@ -79,13 +80,13 @@ class group_mapper_test extends \phpbb_test_case
 			$this->log,
 			$phpbb_root_path,
 			$phpEx,
-			'phpbb_patreon_tiers'
+			'phpbb_patreon_tier_groups'
 		);
 	}
 
 	/**
-	 * Tier-to-group map must be read from the patreon_tiers table into
-	 * an associative array.
+	 * Tier-to-groups map must be read from the join table into an
+	 * associative array of tier_id => [group_id, ...].
 	 */
 	public function test_get_tier_group_map()
 	{
@@ -94,12 +95,28 @@ class group_mapper_test extends \phpbb_test_case
 
 		$this->assertIsArray($map);
 		$this->assertCount(2, $map);
-		$this->assertEquals(5, $map['tier-1']);
-		$this->assertEquals(6, $map['tier-2']);
+		$this->assertEquals([5], $map['tier-1']);
+		$this->assertEquals([6], $map['tier-2']);
 	}
 
 	/**
-	 * An empty tiers table should yield an empty map, not an error.
+	 * A tier mapped to multiple groups collects every group_id row into
+	 * one array under that tier_id — this is the whole point of #5.
+	 */
+	public function test_get_tier_group_map_multiple_groups_per_tier()
+	{
+		$mapper = $this->get_mapper(array(), array(
+			array('tier_id' => 'tier-1', 'group_id' => '5'),
+			array('tier_id' => 'tier-1', 'group_id' => '7'),
+		));
+		$map = $mapper->get_tier_group_map();
+
+		$this->assertCount(1, $map);
+		$this->assertEquals([5, 7], $map['tier-1']);
+	}
+
+	/**
+	 * An empty join table should yield an empty map, not an error.
 	 */
 	public function test_get_tier_group_map_empty()
 	{
@@ -108,7 +125,8 @@ class group_mapper_test extends \phpbb_test_case
 	}
 
 	/**
-	 * get_all_patron_group_ids() extracts the unique group IDs from the tier map.
+	 * get_all_patron_group_ids() flattens every tier's group list into
+	 * one unique set of group IDs.
 	 */
 	public function test_get_all_patron_group_ids()
 	{
@@ -130,6 +148,26 @@ class group_mapper_test extends \phpbb_test_case
 			array('tier_id' => 'tier-2', 'group_id' => '5'),
 		));
 		$this->assertCount(1, $mapper->get_all_patron_group_ids());
+	}
+
+	/**
+	 * get_all_patron_group_ids() must not error when a tier maps to
+	 * multiple groups (array_merge needs at least the spread to work
+	 * with nested arrays, not just flat scalars).
+	 */
+	public function test_get_all_patron_group_ids_with_multi_group_tier()
+	{
+		$mapper = $this->get_mapper(array(), array(
+			array('tier_id' => 'tier-1', 'group_id' => '5'),
+			array('tier_id' => 'tier-1', 'group_id' => '7'),
+			array('tier_id' => 'tier-2', 'group_id' => '6'),
+		));
+		$ids = $mapper->get_all_patron_group_ids();
+
+		$this->assertCount(3, $ids);
+		$this->assertContains(5, $ids);
+		$this->assertContains(6, $ids);
+		$this->assertContains(7, $ids);
 	}
 
 	/**

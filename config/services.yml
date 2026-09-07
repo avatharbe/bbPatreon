@@ -32,7 +32,7 @@ services:
             - '@log'
             - '%core.root_path%'
             - '%core.php_ext%'
-            - '%avathar.bbpatreon.tables.patreon_tiers%'
+            - '%avathar.bbpatreon.tables.patreon_tier_groups%'
 
     # Public patron data provider — the supported way for other
     # extensions to read opted-in supporter data without querying
@@ -117,6 +117,7 @@ services:
             - '@dispatcher'
             - '%avathar.bbpatreon.tables.patreon_sync%'
             - '%avathar.bbpatreon.tables.patreon_tiers%'
+            - '%avathar.bbpatreon.tables.patreon_tier_groups%'
             - '%tables.auth_provider_oauth_account_assoc%'
 
     # ACP controller for the "bbAccounts Integration" mode

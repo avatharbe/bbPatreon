@@ -56,6 +56,9 @@ class acp_controller
 	protected $patreon_tiers_table;
 
 	/** @var string */
+	protected $patreon_tier_groups_table;
+
+	/** @var string */
 	protected $oauth_accounts_table;
 
 	/** @var string */
@@ -75,6 +78,7 @@ class acp_controller
 		\phpbb\event\dispatcher_interface $dispatcher,
 		string $patreon_sync_table,
 		string $patreon_tiers_table,
+		string $patreon_tier_groups_table,
 		string $oauth_accounts_table
 	)
 	{
@@ -91,6 +95,7 @@ class acp_controller
 		$this->dispatcher			= $dispatcher;
 		$this->patreon_sync_table	= $patreon_sync_table;
 		$this->patreon_tiers_table	= $patreon_tiers_table;
+		$this->patreon_tier_groups_table	= $patreon_tier_groups_table;
 		$this->oauth_accounts_table	= $oauth_accounts_table;
 	}
 
@@ -155,7 +160,7 @@ class acp_controller
 		$groups = $this->get_phpbb_groups();
 
 		// Load tiers from database
-		$sql = 'SELECT tier_id, tier_label, description, group_id, amount_cents, patron_count, published FROM ' . $this->patreon_tiers_table . ' ORDER BY amount_cents ASC';
+		$sql = 'SELECT tier_id, tier_label, description, amount_cents, patron_count, published FROM ' . $this->patreon_tiers_table . ' ORDER BY amount_cents ASC';
 		$result = $this->db->sql_query($sql);
 		$tiers = [];
 		while ($row = $this->db->sql_fetchrow($result))
@@ -163,6 +168,9 @@ class acp_controller
 			$tiers[] = $row;
 		}
 		$this->db->sql_freeresult($result);
+
+		// tier_id => [group_id, ...] for the checkbox lists below
+		$tier_group_map = $this->group_mapper->get_tier_group_map();
 
 		$this->template->assign_vars([
 			'S_ERROR'		=> $s_errors,
@@ -183,27 +191,30 @@ class acp_controller
 			'PATREON_LAST_SYNC'				=> $this->config['patreon_last_cron_sync'] ? $this->user->format_date((int) $this->config['patreon_last_cron_sync']) : $this->language->lang('PATREON_NEVER'),
 		]);
 
-		// Assign tier mapping rows
-		foreach ($tiers as $tier)
+		// Assign tier mapping rows. TIER_INDEX is threaded through to the
+		// group checkboxes' name="group_ids[TIER_INDEX][]" so save_settings()
+		// can correlate them back to tier_ids[] by position.
+		foreach ($tiers as $i => $tier)
 		{
 			$this->template->assign_block_vars('tier_map', [
+				'TIER_INDEX'	=> $i,
 				'TIER_ID'		=> $tier['tier_id'],
 				'TIER_LABEL'	=> $tier['tier_label'],
 				'DESCRIPTION'	=> $tier['description'],
-				'GROUP_ID'		=> (int) $tier['group_id'],
 				'AMOUNT'		=> $this->format_currency((int) $tier['amount_cents']),
 				'PATRON_COUNT'	=> (int) $tier['patron_count'],
 				'PUBLISHED'		=> (bool) $tier['published'],
 			]);
-		}
 
-		// Assign groups for dropdown
-		foreach ($groups as $group)
-		{
-			$this->template->assign_block_vars('groups', [
-				'GROUP_ID'		=> $group['group_id'],
-				'GROUP_NAME'	=> $group['group_name'],
-			]);
+			$mapped_group_ids = $tier_group_map[$tier['tier_id']] ?? [];
+			foreach ($groups as $group)
+			{
+				$this->template->assign_block_vars('tier_map.group_options', [
+					'GROUP_ID'		=> $group['group_id'],
+					'GROUP_NAME'	=> $group['group_name'],
+					'CHECKED'		=> in_array((int) $group['group_id'], $mapped_group_ids, true),
+				]);
+			}
 		}
 
 		// Assign linked users
@@ -245,18 +256,32 @@ class acp_controller
 		$this->config->set('auth_oauth_patreon_key', $client_id);
 		$this->config->set('auth_oauth_patreon_secret', $client_secret);
 
-		// Update tier-group mappings from form arrays
+		// Update tier-group mappings from form arrays. tier_ids[] and
+		// group_ids[][] are index-correlated: group_ids[$i] holds the
+		// checked group IDs for the tier at tier_ids[$i].
 		$tier_ids = $this->request->variable('tier_ids', ['']);
-		$group_ids = $this->request->variable('group_ids', [0]);
+		$group_ids = $this->request->variable('group_ids', array(0 => array(0)));
 
 		foreach ($tier_ids as $i => $tid)
 		{
 			$tid = trim($tid);
-			if (!empty($tid))
+			if (empty($tid))
 			{
-				$sql = 'UPDATE ' . $this->patreon_tiers_table . '
-					SET group_id = ' . (int) ($group_ids[$i] ?? 0) . "
-					WHERE tier_id = '" . $this->db->sql_escape($tid) . "'";
+				continue;
+			}
+
+			$selected_group_ids = array_unique(array_filter(array_map('intval', $group_ids[$i] ?? [])));
+
+			$sql = 'DELETE FROM ' . $this->patreon_tier_groups_table . "
+				WHERE tier_id = '" . $this->db->sql_escape($tid) . "'";
+			$this->db->sql_query($sql);
+
+			foreach ($selected_group_ids as $group_id)
+			{
+				$sql = 'INSERT INTO ' . $this->patreon_tier_groups_table . ' ' . $this->db->sql_build_array('INSERT', [
+					'tier_id'	=> $tid,
+					'group_id'	=> $group_id,
+				]);
 				$this->db->sql_query($sql);
 			}
 		}
@@ -704,7 +729,7 @@ class acp_controller
 
 						if ($exists)
 						{
-							// Update metadata, preserve group_id
+							// Update metadata; group mappings live in patreon_tier_groups and are untouched here
 							$sql = 'UPDATE ' . $this->patreon_tiers_table . '
 								SET ' . $this->db->sql_build_array('UPDATE', [
 									'tier_label'	=> $tier_title,
@@ -722,7 +747,6 @@ class acp_controller
 								'tier_id'		=> $tid,
 								'tier_label'	=> $tier_title,
 								'description'	=> $tier_desc,
-								'group_id'		=> 0,
 								'amount_cents'	=> $tier_data['amount_cents'],
 								'currency'		=> $currency,
 								'patron_count'	=> $tier_data['patron_count'],
