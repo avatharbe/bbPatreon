@@ -50,7 +50,7 @@ public function on_pledge_changed($event)
 Fired after the ACP "Fetch Tiers" action has refreshed the tier catalogue from Patreon (`patreon_tiers` upserted). There's no equivalent event for individual tier reads — this fires only when the catalogue itself changes, so a consumer knows when to invalidate a cache built from `tier_data_provider` (see 1.6) rather than re-fetching it on every page load.
 
 - **Placement:** `controller\acp_controller::ExtractTiers()`
-- **Since:** unreleased
+- **Since:** 1.3.0
 - **Arguments:**
   - `tier_ids` (string[]) — Patreon tier IDs that were added or updated in this run
 - **Known listeners:** none
@@ -92,7 +92,7 @@ Since 1.2.4, recipients are gated by the new `u_patreon_notify` permission inste
 The supported way for another extension to read opted-in public patron data — use this instead of querying `phpbb_patreon_sync` directly. Consent is enforced inside the service (only `show_public = 1` + `active_patron` rows are ever returned); the board owner cannot override individual user consent, and neither can a caller of this service.
 
 - **Class:** `\avathar\bbpatreon\service\patron_data_provider`
-- **Since:** unreleased
+- **Since:** 1.3.0
 - **Methods:**
   - `get_public_supporters(): array` — one entry per opted-in active patron, pre-formatted for display: `user_id` (int), `username` (string, HTML — pre-rendered via phpBB's `get_username_string()`), `avatar` (string, HTML), `tier_label` (string), `group_name` (string, HTML — colour + built-in group translation already applied), `rank_title` (string), `pledge_amount` (string — formatted with the campaign currency, or `''` if amounts are disabled or the user didn't opt in to showing theirs). Ordered by tier amount descending, then username.
   - `get_public_supporters_count(): int` — count only, for lightweight display (e.g. a nav-link badge) without formatting every row.
@@ -114,7 +114,7 @@ foreach ($provider->get_public_supporters() as $supporter)
 The supported way for another extension to read the published Patreon tier catalogue — e.g. to render a "Membership Tiers" page (via `phpbb/pages` or a custom controller) with "Subscribe on Patreon" links, without calling the Patreon API directly. Pair with the `avathar.bbpatreon.tiers_updated` event (see 1.1) to know when to invalidate anything you cache from it.
 
 - **Class:** `\avathar\bbpatreon\service\tier_data_provider`
-- **Since:** unreleased
+- **Since:** 1.3.0
 - **Methods:**
   - `get_published_tiers(): array` — one entry per tier with `published = 1` (retired tiers are excluded), ordered cheapest first: `tier_id` (string), `tier_label` (string), `description` (string), `amount` (string — formatted with the tier's currency), `amount_cents` (int), `subscribe_url` (string — Patreon's "join at this tier" checkout link, or `''` if no campaign is configured yet).
 
@@ -135,8 +135,8 @@ Hooks inside bbPatreon's own templates that other extensions can use to inject m
 
 | Event | Placement | Since |
 |---|---|---|
-| `avathar_bbpatreon_supporters_body_before` | `supporters_body.html`, right after the page title | unreleased |
-| `avathar_bbpatreon_supporters_body_after` | `supporters_body.html`, right after the supporters list panel | unreleased |
+| `avathar_bbpatreon_supporters_body_before` | `supporters_body.html`, right after the page title | 1.3.0 |
+| `avathar_bbpatreon_supporters_body_after` | `supporters_body.html`, right after the supporters list panel | 1.3.0 |
 
 To hook into either, create `styles/<style>/template/event/<event_name>.html` in your own extension — no changes to bbPatreon required.
 

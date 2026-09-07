@@ -5,7 +5,7 @@ Patreon integration for phpBB — link patron accounts via OAuth and automatical
 Developed and maintained by [Avathar.be](https://www.avathar.be).
 
 #### Version
-1.2.4
+1.3.0
 
 [![Tests](https://github.com/avatharbe/bbpatreon/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/avatharbe/bbpatreon/actions/workflows/tests.yml)
 
@@ -58,6 +58,13 @@ Developed and maintained by [Avathar.be](https://www.avathar.be).
 - Dutch, English, French, German, Portuguese, Spanish
 
 ### Changelog
+- 1.3.0
+  - [FIX] Free (\$0) tier patrons were never assigned to their tier's phpBB group and stayed stuck at "pending link" indefinitely — Patreon reports a null `patron_status` for members whose only entitlement is a free tier, which was incorrectly treated as "not a patron". Now normalized to `active_patron` whenever a currently-entitled tier is present. (#23)
+  - [FIX] ACP "Linked Users" table loaded every Patreon-linked member in one unbounded query; paginated at 25 per page using phpBB's core pagination service. (#22)
+  - [NEW] New ACP "Patron Stats" page: active/declined patron counts, total monthly pledge amount, and an active-patron breakdown per tier — computed live, no need to visit Patreon's own dashboard. (#4)
+  - [NEW] Public `avathar.bbpatreon.service.patron_data_provider` service exposing opted-in supporter data, so other extensions can read it without querying `phpbb_patreon_sync` directly. Two new template events, `avathar_bbpatreon_supporters_body_before`/`_after`, let other extensions inject markup on the supporters page. (#2)
+  - [NEW] Public `avathar.bbpatreon.service.tier_data_provider` service exposing the published tier catalogue (label, description, formatted amount, Patreon subscribe URL) for building a "Membership Tiers" page. New `avathar.bbpatreon.tiers_updated` event fires when the ACP "Fetch Tiers" action refreshes the catalogue. (#10)
+
 - 1.2.4
   - [NEW] bbAccounts integration: active patrons get monthly journal-entry credits via admin-configured rules in ACP → bbPatreon → bbAccounts Integration. Nightly cron + manual "Run credit now" button. Outbox-pattern idempotency via the new `bbpatreon_credit_log` table. Soft-coupled: works fine when bbAccounts is not installed. (#18)
   - [NEW] New permission `u_patreon_notify` gates who receives "X linked their Patreon account" notifications. Default-granted to ROLE_ADMIN_FULL only; admins can extend to moderator roles or specific groups via ACP → Permissions. (#19)
