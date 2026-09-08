@@ -6,9 +6,15 @@ on:
       - main
       - develop
       - 'develop-*'
+    # Only skipped when every changed file matches, so a commit touching both
+    # code and docs still runs the full matrix.
+    paths-ignore:
+      - '**.md'
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - '**.md'
 
 jobs:
   test:
