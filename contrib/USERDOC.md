@@ -132,6 +132,8 @@ When a patron links their account or when a pledge event fires, the extension wi
 
 **Grace Period:** The number of days to wait before removing a user from their patron group after they stop pledging. Set to `0` for immediate removal. During the grace period, the user keeps their group membership even though they are no longer an active patron.
 
+**Deleting/recreating a tier on Patreon:** Patreon gives a recreated tier a brand-new tier ID, even if the name and price are identical to the one you deleted. Clicking **Fetch Tiers** will retire the old tier (it disappears from the public tier page and greys out in this list) and add the new one as a separate row — but the new tier starts with **no group mapping**. You need to tick the group checkbox(es) for it again, same as for any new tier. Until you do, patrons who move onto the new tier keep whatever groups they already had (they are not demoted), and an admin-log entry is added so you notice.
+
 
 <img width="1884" height="1140" alt="Tier Mapping" src="https://github.com/user-attachments/assets/fd398f30-da4d-464f-ae5e-6ead8d6758b6" />
 
@@ -172,7 +174,7 @@ On demotion (cancellation, grace-period expiry, or tier change), the patron's de
 
 ## STEP 7 (Optional) : bbAccounts Integration
 
-If you have the [bbAccounts](https://github.com/avatharbe/bbAccounts) extension installed, bbPatreon can credit active patrons' wallets with points (or any unit you configure in bbAccounts) every month. This works fine if bbAccounts is not installed — the integration is soft-coupled and silently inert.
+If you have the [bbAccounts](https://github.com/avatharbe/bbAccounts) extension installed, bbPatreon can credit active patrons' wallets with points (or any unit you configure in bbAccounts) every month. This works fine if bbAccounts is not installed — the integration is soft-coupled and silently inert, and the "bbAccounts Integration" tab below won't even appear in the ACP menu until bbAccounts is installed and enabled.
 
 ### Setup
 

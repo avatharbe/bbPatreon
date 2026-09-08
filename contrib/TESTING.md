@@ -4,7 +4,7 @@
 
 | Suite | Type | Base class | What it tests |
 |---|---|---|---|
-| `tests/service/group_mapper_test.php` | Unit | `phpbb_test_case` | Tier→groups map parsing (1.3.0+: array per tier), group ID deduplication across multi-group tiers, grace period skip |
+| `tests/service/group_mapper_test.php` | Unit | `phpbb_test_case` | Tier→groups map parsing (1.3.0+: array per tier), group ID deduplication across multi-group tiers, grace period skip, unmapped-tier warn-not-demote (1.3.0+) |
 | `tests/service/api_client_test.php` | Unit | `phpbb_test_case` | Error handling: no token, no campaign, no refresh token |
 | `tests/service/patron_data_provider_test.php` | Unit | `TestCase` | Empty-result path, count query, rank-title batch lookup, group-name colour/translation formatting, currency formatting. Deliberately does NOT exercise the real-row happy path — see the file's own docblock on why |
 | `tests/service/tier_data_provider_test.php` | Unit | `TestCase` | Published-tier mapping, empty result, subscribe-URL building (incl. no-campaign and URL-encoding cases), currency fallback |

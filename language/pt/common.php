@@ -44,6 +44,7 @@ $lang = array_merge($lang, [
 	'LOG_PATREON_WEBHOOK_EVENT'			=> '<strong>Webhook do Patreon recebido:</strong> %1$s (estado: %2$s, nível: %3$s)',
 	'LOG_PATREON_GROUP_ADD'				=> '<strong>Promoção de grupo Patreon:</strong> utilizador ID %1$s adicionado ao grupo ID %2$s',
 	'LOG_PATREON_GROUP_REMOVE'			=> '<strong>Rebaixamento de grupo Patreon:</strong> utilizador ID %1$s removido do grupo ID %2$s',
+	'LOG_PATREON_TIER_UNMAPPED'			=> '<strong>Nível do Patreon não mapeado:</strong> o apoiador ativo com ID de utilizador %1$s está no nível %2$s, que não tem nenhum mapeamento de grupo configurado — os seus grupos existentes foram mantidos',
 	'LOG_BBPATREON_CREDIT_RUN'        => '<strong>bbPatreon</strong> cron credit run for period %1$s: %2$d credited, %3$d skipped',
 	'LOG_BBPATREON_CREDIT_RUN_MANUAL' => '<strong>bbPatreon</strong> manual credit run for period %1$s: %2$d credited, %3$d skipped',
 ]);

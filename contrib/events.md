@@ -54,6 +54,7 @@ Fired after the ACP "Fetch Tiers" action has refreshed the tier catalogue from P
 - **Arguments:**
   - `tier_ids` (string[]) — Patreon tier IDs that were added or updated in this run
 - **Known listeners:** none
+- **Note (1.3.0+):** tiers no longer returned by Patreon (deleted, or recreated under a new `tier_id`) are marked `published = 0` in the same run, but their IDs are NOT included in `tier_ids` — this event only reports additions/updates. A consumer wanting to react to retirements must diff against its own previously-cached tier list.
 
 ### 1.2 Routes
 

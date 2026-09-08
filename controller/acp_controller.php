@@ -756,6 +756,18 @@ class acp_controller
 						$this->db->sql_query($sql);
 					}
 
+					// Any tier no longer returned by Patreon has been deleted (or
+					// retired) there. Mark it unpublished rather than deleting the
+					// row, to preserve existing patron/group mappings — same
+					// semantics as a tier the admin unpublished on Patreon
+					// directly (see tier_data_provider::get_published_tiers()).
+					$fetched_ids = array_map([$this->db, 'sql_escape'], array_keys($tiers));
+					$sql = 'UPDATE ' . $this->patreon_tiers_table . "
+						SET published = 0
+						WHERE tier_id NOT IN ('" . implode("', '", $fetched_ids) . "')
+							AND published = 1";
+					$this->db->sql_query($sql);
+
 					/**
 					 * Event fired after the ACP "Fetch Tiers" action has
 					 * refreshed the tier catalogue from Patreon.

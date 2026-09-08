@@ -121,6 +121,19 @@ class group_mapper
 			$target_group_ids = [];
 		}
 
+		// Active patron pledged to a tier with no group mapping configured
+		// yet (e.g. a tier just deleted/recreated on Patreon and not yet
+		// re-mapped in ACP). Leave their current groups untouched instead
+		// of silently demoting a paying patron; log so the admin notices.
+		if ($pledge_status === 'active_patron' && empty($target_group_ids) && !empty($new_tier_id))
+		{
+			$this->log->add('admin', ANONYMOUS, '', 'LOG_PATREON_TIER_UNMAPPED', false, [
+				(string) $user_id,
+				$new_tier_id,
+			]);
+			return;
+		}
+
 		// Active patron: remove from wrong groups, add to all target groups
 		if ($pledge_status === 'active_patron' && !empty($target_group_ids))
 		{

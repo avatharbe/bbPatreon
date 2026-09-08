@@ -131,6 +131,8 @@ CREATE TABLE phpbb_patreon_tiers (
 );
 ```
 
+`published` doubles as a "still on Patreon" flag (1.3.0+): the ACP "Fetch Tiers" action (`acp_controller::ExtractTiers()`) sets it to `0` for any row whose `tier_id` is absent from the fresh API response — same handling whether the tier was unpublished on Patreon directly or deleted (and possibly recreated under a new `tier_id`). Rows are never deleted, only unpublished, so existing `phpbb_patreon_tier_groups` mappings survive and admins can still see the retired tier's history in the ACP mapping list (greyed out). `tier_data_provider::get_published_tiers()` excludes `published=0` rows from the public catalogue.
+
 ### Tier-to-group mapping (`phpbb_patreon_tier_groups`, 1.3.0+)
 
 A tier can map to more than one phpBB group (e.g. a shared "all patrons" perk group plus a tier-specific exclusive group). `patreon_tiers.group_id` was dropped in favour of this many-to-many join table (v1_3_0 added the table and backfilled existing single mappings; v1_3_1 dropped the old column):
@@ -362,12 +364,17 @@ ext/avathar/bbpatreon/
 │   ├── v1_2_5_patron_stats_page.php    # Registers the "Patron Stats" ACP mode (1.3.0)
 │   ├── v1_3_0_tier_group_join.php      # Adds phpbb_patreon_tier_groups; backfills existing
 │   │                                    #   single group_id mappings into it (issue #5)
-│   └── v1_3_1_drop_tier_group_id.php   # Drops patreon_tiers.group_id — the join table is
-│                                        #   now the sole source of truth (issue #5)
+│   ├── v1_3_1_drop_tier_group_id.php   # Drops patreon_tiers.group_id — the join table is
+│   │                                    #   now the sole source of truth (issue #5)
+│   └── v1_3_2_hide_bbaccounts_tab.php  # Updates the stored module_auth of the
+│                                        #   bbaccounts_integration ACP mode for existing
+│                                        #   installs to add the ext_avathar/bbaccounts check
 │
 ├── acp/
 │   ├── main_info.php                    # ACP module metadata
-│   │                                    # Modes: settings, bbaccounts_integration (1.2.4+),
+│   │                                    # Modes: settings, bbaccounts_integration (1.2.4+;
+│   │                                    #        1.3.0+: hidden unless bbAccounts is enabled,
+│   │                                    #        via ext_avathar/bbaccounts auth token),
 │   │                                    #        patron_stats (1.3.0+)
 │   └── main_module.php                  # ACP module class
 │                                        # Dispatches on $mode:
@@ -495,6 +502,7 @@ Reads tier→groups mappings from `phpbb_patreon_tier_groups` (1.3.0+) to resolv
 - **Promotion:** `group_user_add()` — adds the user to every group mapped to their tier
 - **Demotion:** `safe_group_user_del()` helper — wraps phpBB's `group_user_del()`. When the `bbpatreon_set_default_group` config flag is on, checks whether the group being removed is the user's current default; if so, resets default to the Registered users group first (otherwise the user would be left with an invalid default group_id pointing at a group they're no longer in).
 - **Tier change:** remove from any group not mapped to the new tier via `safe_group_user_del`, add every group mapped to the new tier via `group_user_add`
+- **Unmapped tier (1.3.0+):** if an `active_patron` is on a `tier_id` with no row in `phpbb_patreon_tier_groups` yet (e.g. right after a tier is deleted and recreated on Patreon under a new ID, before the admin re-maps it in ACP), `sync_user_groups()` leaves their current groups untouched and logs `LOG_PATREON_TIER_UNMAPPED` instead of falling through to demotion — a paying patron is never silently stripped of their group just because the admin hasn't caught up yet.
 - **Grace period:** when status is `former_patron`/`declined_patron` and grace_period > 0, demotion is skipped; the nightly cron enforces it by checking `last_synced_at + grace_days < now()`
 - **Default-group toggle (1.2.4+):** when `bbpatreon_set_default_group=1`, promotion also calls `group_user_attributes('default', target_group_id, …)` so the patron's username takes on that group's colour and rank. 1.3.0+: when a tier maps to multiple groups, `target_group_id` is the alphabetically-first one. Demotion resets the default to Registered users (custom pre-promotion default groups are not preserved across cycles).
 
@@ -508,6 +516,8 @@ Two public DI services documented as a stable API contract in `contrib/events.md
 ### bbAccounts Recorder (`service/bbaccounts_recorder.php`, 1.2.4+)
 
 Single-purpose service that posts journal entries to the bbAccounts ledger on behalf of active-pledge patrons. Soft-coupled via nullable DI on `@?avathar.bbaccounts.service.ledger` — when bbAccounts is not installed, `is_available()` returns false and `credit_active_patrons_for_period()` short-circuits with `skipped_no_rules=1`.
+
+**ACP visibility (1.3.0+):** the "bbAccounts Integration" ACP tab itself is gated by an `ext_avathar/bbaccounts` auth token in `acp/main_info.php`, using phpBB's built-in `ext_` module-auth check (`$phpbb_extension_manager->all_enabled()`) — the tab is hidden from the ACP menu entirely, rather than showing and rendering an "extension not installed" errorbox. `bbaccounts_acp_controller::handle()`'s `is_available()` check (via `S_BBACCOUNTS_MISSING`) remains as a fallback for anyone hitting the URL directly.
 
 **Outbox pattern (idempotency):**
 

@@ -5,7 +5,7 @@ Patreon integration for phpBB — link patron accounts via OAuth and automatical
 Developed and maintained by [Avathar.be](https://www.avathar.be).
 
 #### Version
-1.3.0 dev
+1.3.0
 
 [![Tests](https://github.com/avatharbe/bbpatreon/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/avatharbe/bbpatreon/actions/workflows/tests.yml)
 
@@ -59,6 +59,9 @@ Developed and maintained by [Avathar.be](https://www.avathar.be).
 
 ### Changelog
 - 1.3.0
+  - [FIX] "Fetch Tiers" only ever inserted/updated tiers Patreon's API currently returns — a tier deleted then recreated on Patreon (even at the same price) left the old tier stuck in the ACP mapping list and public tier catalogue forever. Tiers missing from a fresh fetch are now marked unpublished, same as a tier retired on Patreon directly.
+  - [FIX] An active patron landing on a tier with no group mapping configured yet (e.g. right after the tier above is recreated) was silently demoted from all patron groups. Their groups are now left untouched and a `LOG_PATREON_TIER_UNMAPPED` admin-log entry is added instead, so the admin notices and can re-map the tier.
+  - [FIX] The ACP "bbAccounts Integration" tab was always visible, even with bbAccounts not installed, where it just showed an errorbox explaining that. The tab itself is now hidden until bbAccounts is installed and enabled.
   - [FIX] Free (\$0) tier patrons were never assigned to their tier's phpBB group and stayed stuck at "pending link" indefinitely — Patreon reports a null `patron_status` for members whose only entitlement is a free tier, which was incorrectly treated as "not a patron". Now normalized to `active_patron` whenever a currently-entitled tier is present. (#23)
   - [FIX] ACP "Linked Users" table loaded every Patreon-linked member in one unbounded query; paginated at 25 per page using phpBB's core pagination service. (#22)
   - [NEW] New ACP "Patron Stats" page: active/declined patron counts, total monthly pledge amount, and an active-patron breakdown per tier — computed live, no need to visit Patreon's own dashboard. (#4)

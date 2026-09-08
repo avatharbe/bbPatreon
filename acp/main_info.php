@@ -28,7 +28,7 @@ class main_info
 				],
 				'bbaccounts_integration' => [
 					'title'	=> 'ACP_BBPATREON_BBACCOUNTS_INTEGRATION',
-					'auth'	=> 'ext_avathar/bbpatreon && acl_a_board',
+					'auth'	=> 'ext_avathar/bbpatreon && ext_avathar/bbaccounts && acl_a_board',
 					'cat'	=> ['ACP_BBPATREON_TITLE'],
 				],
 				'patron_stats' => [

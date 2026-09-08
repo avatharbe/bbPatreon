@@ -69,7 +69,7 @@ class v1_2_1_bbaccounts_integration extends \phpbb\db\migration\migration
 					'module_basename' => '\avathar\bbpatreon\acp\main_module',
 					'module_langname' => 'ACP_BBPATREON_BBACCOUNTS_INTEGRATION',
 					'module_mode'     => 'bbaccounts_integration',
-					'module_auth'     => 'ext_avathar/bbpatreon && acl_a_board',
+					'module_auth'     => 'ext_avathar/bbpatreon && ext_avathar/bbaccounts && acl_a_board',
 				],
 			]],
 		];

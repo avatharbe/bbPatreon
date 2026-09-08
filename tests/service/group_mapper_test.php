@@ -202,4 +202,21 @@ class group_mapper_test extends \phpbb_test_case
 		$mapper->sync_user_groups(2, 'tier-1', 'declined_patron');
 		$this->assertTrue(true);
 	}
+
+	/**
+	 * An active patron on a tier with no group mapping (e.g. a tier just
+	 * deleted/recreated on Patreon and not yet re-mapped in ACP) must NOT
+	 * be silently demoted — only a warning is logged, existing groups are
+	 * left untouched.
+	 */
+	public function test_sync_warns_without_demoting_when_tier_unmapped()
+	{
+		$mapper = $this->get_mapper();
+
+		$this->log->expects($this->once())
+			->method('add')
+			->with('admin', ANONYMOUS, '', 'LOG_PATREON_TIER_UNMAPPED', false, ['2', 'tier-99']);
+
+		$mapper->sync_user_groups(2, 'tier-99', 'active_patron');
+	}
 }

@@ -44,6 +44,7 @@ $lang = array_merge($lang, [
 	'LOG_PATREON_WEBHOOK_EVENT'			=> '<strong>Patreon Webhook empfangen:</strong> %1$s (Status: %2$s, Stufe: %3$s)',
 	'LOG_PATREON_GROUP_ADD'				=> '<strong>Patreon Gruppenbeförderung:</strong> Benutzer-ID %1$s zu Gruppe-ID %2$s hinzugefügt',
 	'LOG_PATREON_GROUP_REMOVE'			=> '<strong>Patreon Gruppendegradierung:</strong> Benutzer-ID %1$s aus Gruppe-ID %2$s entfernt',
+	'LOG_PATREON_TIER_UNMAPPED'			=> '<strong>Patreon-Stufe nicht zugeordnet:</strong> aktiver Patron Benutzer-ID %1$s befindet sich in Stufe %2$s, für die keine Gruppenzuordnung konfiguriert ist – bestehende Gruppen wurden nicht verändert',
 	'LOG_BBPATREON_CREDIT_RUN'        => '<strong>bbPatreon</strong> cron credit run for period %1$s: %2$d credited, %3$d skipped',
 	'LOG_BBPATREON_CREDIT_RUN_MANUAL' => '<strong>bbPatreon</strong> manual credit run for period %1$s: %2$d credited, %3$d skipped',
 ]);
